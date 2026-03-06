@@ -1,8 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { mockProducts, Product } from "@/lib/admin-data";
-import { Plus, Pencil, Trash2, X, Package, ImageIcon } from "lucide-react";
+import { 
+  useGetAdminProducts, 
+  useCreateProduct, 
+  useUpdateProduct, 
+  useDeleteProduct 
+} from "@/services/products/product.hooks";
+import { Plus, Pencil, Trash2, X, Package, ImageIcon, RefreshCw } from "lucide-react";
 
 const VARIANTS = ["60ml Pack (x12)", "Half Gallon", "1 Gallon"] as const;
 type Variant = typeof VARIANTS[number];
@@ -12,6 +17,7 @@ const stockBadge = (stock: number) => {
   if (stock < 20) return "bg-yellow-100 text-yellow-700";
   return "bg-green-100 text-green-700";
 };
+
 const stockLabel = (stock: number) => {
   if (stock === 0) return "Out of Stock";
   if (stock < 20) return "Low Stock";
@@ -35,7 +41,13 @@ const emptyForm: ProductFormData = {
 };
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  // ─── API Hooks ──────────────────────────────────────────────────────────────
+  const { data: products = [], isLoading, isError, refetch } = useGetAdminProducts();
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
+  const deleteProductMutation = useDeleteProduct();
+
+  // ─── UI State ───────────────────────────────────────────────────────────────
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductFormData>(emptyForm);
@@ -47,49 +59,76 @@ export default function ProductsPage() {
     setShowForm(true);
   };
 
-  const openEdit = (p: Product) => {
+  const openEdit = (p: any) => {
     setForm({
       name: p.name,
       variant: p.variant,
       price: p.price.toString(),
       stock: p.stock.toString(),
-      image: p.image,
+      image: p.image || "",
     });
-    setEditingId(p.id);
+    setEditingId(p._id); // Backend typically uses _id for MongoDB
     setShowForm(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name || !form.price || !form.stock) return;
-    if (editingId) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editingId
-            ? { ...p, name: form.name, variant: form.variant, price: parseFloat(form.price), stock: parseInt(form.stock), image: form.image || p.image }
-            : p
-        )
-      );
-    } else {
-      const newProduct: Product = {
-        id: `PROD-${String(products.length + 1).padStart(3, "0")}`,
-        name: form.name,
-        variant: form.variant,
-        price: parseFloat(form.price),
-        stock: parseInt(form.stock),
-        sold: 0,
-        image: form.image || "https://i.ibb.co/JjGQ5Y9/product-shot.png",
-      };
-      setProducts((prev) => [...prev, newProduct]);
+
+    const payload = {
+      name: form.name,
+      variant: form.variant,
+      price: parseFloat(form.price),
+      stock: parseInt(form.stock),
+      image: form.image,
+    };
+
+    try {
+      if (editingId) {
+        await updateProductMutation.mutateAsync({ id: editingId, data: payload });
+      } else {
+        await createProductMutation.mutateAsync(payload);
+      }
+      setShowForm(false);
+      setEditingId(null);
+      setForm(emptyForm);
+    } catch (err) {
+      console.error("Failed to save product:", err);
     }
-    setShowForm(false);
-    setEditingId(null);
-    setForm(emptyForm);
   };
 
-  const handleDelete = (id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    setDeleteConfirm(null);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteProductMutation.mutateAsync(id);
+      setDeleteConfirm(null);
+    } catch (err) {
+      console.error("Failed to delete product:", err);
+    }
   };
+
+  if (isLoading) return (
+    <div className="flex flex-col items-center justify-center h-64 text-gray-400 gap-3">
+      <RefreshCw className="w-6 h-6 animate-spin text-[#84cc16]" />
+      <p className="text-sm font-medium">Fetching products from backend...</p>
+    </div>
+  );
+
+  if (isError) return (
+    <div className="flex flex-col items-center justify-center h-64 gap-3 text-center px-4">
+      <div className="bg-red-50 p-3 rounded-full">
+        <Package className="w-6 h-6 text-red-500" />
+      </div>
+      <div>
+        <h3 className="text-gray-900 font-bold">Connection Failed</h3>
+        <p className="text-sm text-gray-500">Could not load products. Is the backend server running?</p>
+      </div>
+      <button 
+        onClick={() => refetch()} 
+        className="mt-2 flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-gray-900 px-4 py-2 bg-white border border-gray-200 rounded-lg"
+      >
+        <RefreshCw className="w-3 h-3" /> Retry Connection
+      </button>
+    </div>
+  );
 
   return (
     <div className="space-y-5">
@@ -118,51 +157,51 @@ export default function ProductsPage() {
                 <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3">Price</th>
                 <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3">Stock</th>
                 <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden md:table-cell">Sold</th>
-                <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden md:table-cell">Revenue</th>
                 <th className="px-3 py-3 w-24 text-right text-xs font-semibold text-gray-400 uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {products.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50/60 transition group">
+              {products.map((p: any) => (
+                <tr key={p._id} className="hover:bg-gray-50/60 transition group">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">
-                        <img src={p.image} alt={p.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        {p.image ? (
+                           <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                            <Package className="w-4 h-4 text-gray-300" />
+                          </div>
+                        )}
                       </div>
                       <div>
                         <p className="font-semibold text-gray-800 text-sm">{p.name}</p>
-                        <p className="text-xs text-gray-400 font-mono">{p.id}</p>
+                        <p className="text-[10px] text-gray-400 font-mono">{p._id}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-3 py-3.5 text-sm text-gray-600 hidden sm:table-cell">{p.variant}</td>
-                  <td className="px-3 py-3.5 font-bold text-gray-800">${p.price.toFixed(2)}</td>
+                  <td className="px-3 py-3.5 font-bold text-gray-800">${p.price?.toFixed(2)}</td>
                   <td className="px-3 py-3.5">
                     <div className="flex items-center gap-2">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${stockBadge(p.stock)}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight ${stockBadge(p.stock)}`}>
                         {stockLabel(p.stock)}
                       </span>
                       <span className="text-xs text-gray-400">{p.stock}</span>
                     </div>
                   </td>
-                  <td className="px-3 py-3.5 text-sm text-gray-500 hidden md:table-cell">{p.sold}</td>
-                  <td className="px-3 py-3.5 font-semibold text-gray-700 hidden md:table-cell">
-                    ${(p.sold * p.price).toFixed(0)}
-                  </td>
-                  <td className="px-3 py-3.5">
-                    <div className="flex items-center justify-end gap-1.5">
+                  <td className="px-3 py-3.5 text-sm text-gray-500 hidden md:table-cell">{p.sold || 0}</td>
+                  <td className="px-3 py-3.5 text-right">
+                    <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => openEdit(p)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"
-                        title="Edit"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => setDeleteConfirm(p.id)}
+                        onClick={() => setDeleteConfirm(p._id)}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
-                        title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -176,7 +215,7 @@ export default function ProductsPage() {
         {products.length === 0 && (
           <div className="text-center py-16 text-gray-400 text-sm">
             <Package className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-            No products yet. Add your first product.
+            No products found in backend.
           </div>
         )}
       </div>
@@ -184,41 +223,27 @@ export default function ProductsPage() {
       {/* Add/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-[2px]" onClick={() => setShowForm(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md z-10">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setShowForm(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md z-10 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
               <h3 className="text-base font-bold text-gray-900">
                 {editingId ? "Edit Product" : "Add New Product"}
               </h3>
-              <button
-                onClick={() => setShowForm(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
-              >
-                <X className="w-4 h-4" />
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="px-6 py-5 space-y-4">
-              {/* Image preview */}
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-xl bg-gray-100 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
-                  {form.image ? (
-                    <img src={form.image} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                  ) : (
-                    <ImageIcon className="w-6 h-6 text-gray-300" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Image URL (mock)</label>
-                  <input
-                    type="text"
-                    value={form.image}
-                    onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84cc16]"
-                    placeholder="https://..."
-                  />
-                </div>
+            <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Image URL</label>
+                <input
+                  type="text"
+                  value={form.image}
+                  onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84cc16]"
+                  placeholder="https://i.ibb.co/..."
+                />
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Product Name *</label>
                 <input
@@ -226,88 +251,71 @@ export default function ProductsPage() {
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84cc16]"
-                  placeholder="e.g. California Pickle Juice"
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Variant *</label>
                 <select
                   value={form.variant}
                   onChange={(e) => setForm((f) => ({ ...f, variant: e.target.value as Variant }))}
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84cc16] bg-white"
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white"
                 >
-                  {VARIANTS.map((v) => (
-                    <option key={v} value={v}>{v}</option>
-                  ))}
+                  {VARIANTS.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Price ($) *</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Price ($)</label>
                   <input
                     type="number"
-                    step="0.01"
                     value={form.price}
                     onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84cc16]"
-                    placeholder="29.99"
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Stock *</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Stock</label>
                   <input
                     type="number"
                     value={form.stock}
                     onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84cc16]"
-                    placeholder="100"
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg"
                   />
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
-              <button
-                onClick={() => setShowForm(false)}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3">
+              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 text-sm font-semibold text-gray-600">Cancel</button>
+              <button 
+                onClick={handleSave} 
+                disabled={createProductMutation.isPending || updateProductMutation.isPending}
+                className="flex-1 py-2.5 text-sm font-bold bg-[#84cc16] hover:bg-[#65a30d] text-black rounded-lg disabled:opacity-50"
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={!form.name || !form.price || !form.stock}
-                className="flex-1 py-2.5 rounded-lg text-sm font-bold bg-[#84cc16] hover:bg-[#65a30d] text-black transition disabled:opacity-40"
-              >
-                {editingId ? "Save Changes" : "Add Product"}
+                {createProductMutation.isPending || updateProductMutation.isPending ? "Saving..." : "Save Product"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Confirm Modal */}
+      {/* Delete Confirmation */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/30" onClick={() => setDeleteConfirm(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm z-10 p-6">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setDeleteConfirm(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm z-10 p-6 text-center">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-5 h-5 text-red-600" />
+              <Trash2 className="w-6 h-6 text-red-600" />
             </div>
-            <h3 className="text-base font-bold text-gray-900 text-center mb-1.5">Delete Product?</h3>
-            <p className="text-sm text-gray-500 text-center mb-5">This action cannot be undone.</p>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Product?</h3>
+            <p className="text-sm text-gray-500 mb-6">Are you sure? This will remove the product permanently from the database.</p>
             <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-lg">Cancel</button>
+              <button 
+                onClick={() => handleDelete(deleteConfirm)} 
+                disabled={deleteProductMutation.isPending}
+                className="flex-1 py-2.5 text-sm font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
               >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 py-2.5 rounded-lg text-sm font-bold bg-red-600 hover:bg-red-700 text-white transition"
-              >
-                Delete
+                {deleteProductMutation.isPending ? "Deleting..." : "Delete Now"}
               </button>
             </div>
           </div>

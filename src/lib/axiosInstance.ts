@@ -60,7 +60,7 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 
 // .env file theke URL nibe, na thakle localhost:4200 use hobe
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4200/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -84,7 +84,7 @@ axiosInstance.interceptors.response.use(
       try {
         // AUTO REFRESH: Tomar backend endpoint jodi '/auth/refresh-token' hoy
         // Backend e jodi oita 'POST' hoy, tobe ekhane .post koro
-        await axios.get(`${API_BASE_URL}/auth/refresh-token`, {
+        await axios.post(`${API_BASE_URL}/auth/refresh`, {
           withCredentials: true,
         });
 

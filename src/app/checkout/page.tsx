@@ -20,37 +20,13 @@ export default function CheckoutPage() {
     state: "",
     zip: "",
     country: "US",
-  });
-
-  const [card, setCard] = useState({
-    number: "",
-    name: "",
-    expiry: "",
-    cvv: "",
+    phone: "", // Added phone
   });
 
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCard((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const formatCardNumber = (value: string) =>
-    value
-      .replace(/\D/g, "")
-      .slice(0, 16)
-      .replace(/(.{4})/g, "$1 ")
-      .trim();
-
-  const formatExpiry = (value: string) => {
-    const clean = value.replace(/\D/g, "").slice(0, 4);
-    if (clean.length >= 2) return `${clean.slice(0, 2)}/${clean.slice(2)}`;
-    return clean;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,55 +41,50 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
+          email: form.email,
+          shippingAddress: {
+            firstName: form.firstName,
+            lastName: form.lastName,
+            street: form.address,
+            city: form.city,
+            state: form.state,
+            zipCode: form.zip,
+            phone: form.phone.replace(/\D/g, ""), // Strip non-digits
+          },
           items: items.map((i) => ({
-            sizeLabel: i.sizeLabel,
+            productId: i.productId,
+            variantId: i.variantId,
             quantity: i.quantity,
-            price: i.price,
           })),
-          total,
         }),
       });
 
-      if (!res.ok) throw new Error("Order failed");
+      const data = await res.json();
 
-      clearCart();
-      setSubmitted(true);
-    } catch {
+      if (!res.ok) {
+        // Jodi backend theke specific validation errors ase
+        if (data.errors) {
+          const msg = data.errors.map((e: any) => e.message).join(", ");
+          toast.error(msg);
+        } else {
+          toast.error(data.message || data.error || "Order failed");
+        }
+        return;
+      }
+
+      if (data.checkoutUrl) {
+        // Redirect to Stripe Checkout!
+        window.location.href = data.checkoutUrl;
+      } else {
+        toast.error("No checkout URL received");
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
-
-  if (submitted) {
-    return (
-      <>
-        <Navbar />
-            <main className="pt-20 sm:pt-32 md:pt-40 min-h-screen bg-white flex items-center justify-center px-4">
-          <div className="text-center max-w-md">
-            <div className="w-20 h-20 bg-[#a3e635] rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShieldCheck size={36} className="text-black" />
-            </div>
-            <h1 className="text-3xl font-black text-black mb-3">Order Confirmed!</h1>
-            <p className="text-gray-500 mb-2">
-              Thank you for your order. A confirmation email will be sent to{" "}
-              <strong>{form.email}</strong>.
-            </p>
-            <p className="text-sm text-[#84cc16] font-semibold mb-8">
-              Ships within 24 hours.
-            </p>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 bg-black text-white font-bold px-7 py-3.5 rounded-xl hover:bg-gray-900 transition-colors text-sm tracking-wide uppercase"
-            >
-              Back to Home
-            </Link>
-          </div>
-        </main>
-      </>
-    );
-  }
 
   return (
     <>
@@ -261,111 +232,50 @@ export default function CheckoutPage() {
                         </div>
                         <div>
                           <label className="block text-[9px] font-black text-black mb-1.5 uppercase tracking-[0.2em]">
-                            Country
+                            Phone Number *
                           </label>
-                          <select
-                            name="country"
-                            value={form.country}
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={form.phone}
                             onChange={handleFormChange}
-                            className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-black focus:outline-none focus:bg-[#a3e635] transition-all bg-white uppercase"
-                          >
-                            <option value="US">UNITED STATES</option>
-                            <option value="CA">CANADA</option>
-                            <option value="GB">UNITED KINGDOM</option>
-                            <option value="AU">AUSTRALIA</option>
-                          </select>
+                            required
+                            placeholder="2135550198"
+                            className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
+                          />
                         </div>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-black text-black mb-1.5 uppercase tracking-[0.2em]">
+                          Country
+                        </label>
+                        <select
+                          name="country"
+                          value={form.country}
+                          onChange={handleFormChange}
+                          className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-black focus:outline-none focus:bg-[#a3e635] transition-all bg-white uppercase"
+                        >
+                          <option value="US">UNITED STATES</option>
+                          <option value="CA">CANADA</option>
+                          <option value="GB">UNITED KINGDOM</option>
+                          <option value="AU">AUSTRALIA</option>
+                        </select>
                       </div>
                     </div>
                   </div>
 
-                  {/* Payment */}
+                  {/* Payment Note */}
                   <div className="bg-[#f9f9f9] border-2 border-black rounded-sm p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-2">
                       <h2 className="text-xl font-black text-black uppercase tracking-tighter italic">Payment</h2>
                       <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-black/40">
                         <Lock size={10} strokeWidth={3} />
-                        SSL Encrypted
+                        SECURE STRIPE CHECKOUT
                       </div>
                     </div>
-                    <div className="space-y-5">
-                      <div>
-                        <label className="block text-[9px] font-black text-black mb-1.5 uppercase tracking-[0.2em]">
-                          Card Number *
-                        </label>
-                        <input
-                          type="text"
-                          name="number"
-                          value={card.number}
-                          onChange={(e) =>
-                            setCard((p) => ({
-                              ...p,
-                              number: formatCardNumber(e.target.value),
-                            }))
-                          }
-                          required
-                          placeholder="1234 5678 9012 3456"
-                          maxLength={19}
-                          className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-black focus:outline-none focus:bg-[#a3e635] transition-all font-mono placeholder:opacity-30"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-black text-black mb-1.5 uppercase tracking-[0.2em]">
-                          Name on Card *
-                        </label>
-                        <input
-                          type="text"
-                          name="name"
-                          value={card.name}
-                          onChange={handleCardChange}
-                          required
-                          placeholder="JOHN SMITH"
-                          className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-black focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-5">
-                        <div>
-                          <label className="block text-[9px] font-black text-black mb-1.5 uppercase tracking-[0.2em]">
-                            Expiry *
-                          </label>
-                          <input
-                            type="text"
-                            name="expiry"
-                            value={card.expiry}
-                            onChange={(e) =>
-                              setCard((p) => ({
-                                ...p,
-                                expiry: formatExpiry(e.target.value),
-                              }))
-                            }
-                            required
-                            placeholder="MM/YY"
-                            maxLength={5}
-                            className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-black focus:outline-none focus:bg-[#a3e635] transition-all font-mono placeholder:opacity-30"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[9px] font-black text-black mb-1.5 uppercase tracking-[0.2em]">
-                            CVV *
-                          </label>
-                          <input
-                            type="text"
-                            name="cvv"
-                            value={card.cvv}
-                            onChange={(e) =>
-                              setCard((p) => ({
-                                ...p,
-                                cvv: e.target.value.replace(/\D/g, "").slice(0, 4),
-                              }))
-                            }
-                            required
-                            placeholder="•••"
-                            maxLength={4}
-                            className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-black focus:outline-none focus:bg-[#a3e635] transition-all font-mono placeholder:opacity-30"
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <p className="text-[10px] font-black text-black/40 uppercase tracking-widest leading-relaxed">
+                      YOU WILL BE REDIRECTED TO A SECURE STRIPE PAGE TO COMPLETE YOUR PURCHASE. WE NEVER STORE YOUR CARD DETAILS.
+                    </p>
                   </div>
                 </div>
 

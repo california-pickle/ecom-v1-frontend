@@ -11,10 +11,11 @@ import { toast } from "sonner";
 export type { SizeOption as SizeOptionDef } from "@/lib/products";
 
 interface ProductActionsProps {
+  productId: string;
   sizeOptions: import("@/lib/products").SizeOption[];
 }
 
-export default function ProductActions({ sizeOptions }: ProductActionsProps) {
+export default function ProductActions({ productId, sizeOptions }: ProductActionsProps) {
   const [selectedSize, setSelectedSize] = useState<string>(sizeOptions[0].value);
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
@@ -27,6 +28,8 @@ export default function ProductActions({ sizeOptions }: ProductActionsProps) {
     addItem(
       {
         id: selectedSize,
+        productId: productId,
+        variantId: currentOption.variantId,
         name: `California Pickle (${currentOption.label})`,
         price: currentOption.price,
         image: "/bottle.webp",
@@ -123,6 +126,8 @@ export default function ProductActions({ sizeOptions }: ProductActionsProps) {
             addItem(
               {
                 id: selectedSize,
+                productId: productId,
+                variantId: currentOption.variantId,
                 name: `California Pickle (${currentOption.label})`,
                 price: currentOption.price,
                 image: "/bottle.webp",

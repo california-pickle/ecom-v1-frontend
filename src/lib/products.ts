@@ -16,6 +16,7 @@ export interface SizeOption {
   label: string;
   price: number;
   sublabel: string;
+  variantId?: string;
 }
 
 export interface KeyFeature {
@@ -36,6 +37,7 @@ export interface HowToUseStep {
 }
 
 export interface ProductCatalogEntry {
+  id: string;
   /** URL slug — used for /product/[slug] */
   slug: string;
   name: string;
@@ -55,6 +57,7 @@ export interface ProductCatalogEntry {
 
 export const PRODUCTS: ProductCatalogEntry[] = [
   {
+    id: "69aab28f68caaa864f09c826",
     slug: "california-pickle",
     name: "The California Pickle",
     tagline: "Pickle Juice Sports Drink",
@@ -65,9 +68,9 @@ export const PRODUCTS: ProductCatalogEntry[] = [
     seoDescription:
       "Fast-acting electrolyte shot powered by real pickle brine. Science-backed cramp relief in under 80 seconds. 0g sugar, vegan, gluten-free.",
     sizeOptions: [
-      { value: "60ml-12pack", label: "60ml — Pack of 12", price: 22, sublabel: "Best Value" },
-      { value: "halfgallon",  label: "Half Gallon",        price: 28, sublabel: "" },
-      { value: "1gallon",     label: "1 Gallon",            price: 38, sublabel: "Bulk" },
+      { value: "60ml-12pack", label: "60ml — Pack of 12", price: 22, sublabel: "Best Value", variantId: "69aab28f68caaa864f09c827" },
+      { value: "halfgallon",  label: "Half Gallon",        price: 28, sublabel: "", variantId: "69aab28f68caaa864f09c828" },
+      { value: "1gallon",     label: "1 Gallon",            price: 38, sublabel: "Bulk", variantId: "69aab28f68caaa864f09c829" },
     ],
     keyFeatures: [
       { icon: Zap,         label: "Fast Cramp Relief",   desc: "Works in under 80 seconds" },

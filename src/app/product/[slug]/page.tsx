@@ -100,7 +100,7 @@ export default async function ProductPage({
               </p>
 
               {/* ── Interactive island: price / size / qty / cart / buy ── */}
-              <ProductActions sizeOptions={product.sizeOptions} />
+              <ProductActions productId={product.id} sizeOptions={product.sizeOptions} />
 
               {/* Key features — static HTML */}
               <div className="border-t-2 border-black pt-8">
