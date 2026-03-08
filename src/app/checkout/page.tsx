@@ -532,6 +532,17 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
+                {/* No Return / No Refund Policy */}
+                <div className="border-2 border-black bg-black text-white rounded-sm p-4 shadow-[4px_4px_0px_0px_rgba(163,230,53,1)]">
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[#a3e635] mb-1.5">
+                    ⚠ Important Policy — Please Read
+                  </p>
+                  <p className="text-[10px] font-bold leading-relaxed text-white/80">
+                    <span className="text-white font-black">ALL SALES ARE FINAL.</span> Due to the perishable and consumable nature of our food &amp; beverage products, we do not accept returns or issue refunds once an order has been placed. By completing this purchase, you acknowledge and agree to this no-return, no-refund policy. If your order arrives damaged, please contact us within 48 hours with photos at{" "}
+                    <span className="text-[#a3e635]">support@californiapickle.com</span>
+                  </p>
+                </div>
+
                 <button
                   type="submit"
                   disabled={submitting || items.length === 0 || !selectedRate}
@@ -542,7 +553,7 @@ export default function CheckoutPage() {
 
                 <p className="text-center text-[9px] font-black uppercase tracking-[0.2em] text-black/40 flex items-center justify-center gap-2">
                   <Lock size={10} strokeWidth={3} />
-                  Secure checkout · 256-bit encrypted
+                  Secure checkout · 256-bit encrypted · No refunds on food products
                 </p>
               </div>
             </div>
