@@ -15,7 +15,6 @@ import {
   X,
   ChevronRight,
   Bell,
-  ClipboardList,
   Activity,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -36,7 +35,6 @@ const navItems = [
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/customers", label: "Customers", icon: Users },
-  { href: "/admin/bulk-orders", label: "Bulk Orders", icon: ClipboardList },
   { href: "/admin/activity", label: "Activity Log", icon: Activity },
   { href: "/admin/emails", label: "Emails", icon: Mail },
   { href: "/admin/settings", label: "Settings", icon: Settings },
