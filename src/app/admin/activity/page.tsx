@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, Search, ShoppingCart, Users, Package, Activity, Settings } from "lucide-react";
+import { RefreshCw, Search, ShoppingCart, Package, Activity, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LogEntry {
@@ -17,8 +17,6 @@ const actionConfig: Record<string, { icon: React.ElementType; color: string; bg:
   "Status Changed": { icon: Activity, color: "text-blue-600", bg: "bg-blue-50" },
   "Order Cancelled": { icon: ShoppingCart, color: "text-red-500", bg: "bg-red-50" },
   "Refund Issued": { icon: ShoppingCart, color: "text-orange-500", bg: "bg-orange-50" },
-  "Bulk Lead": { icon: Package, color: "text-purple-600", bg: "bg-purple-50" },
-  "Bulk Lead Updated": { icon: Package, color: "text-purple-500", bg: "bg-purple-50" },
   "Low Stock Alert": { icon: Package, color: "text-yellow-600", bg: "bg-yellow-50" },
 };
 

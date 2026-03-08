@@ -1,50 +1,130 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Customer } from "@/lib/db";
-import { Order } from "@/lib/db";
 import { Search, ChevronRight, X, User, Mail, MapPin, ShoppingBag, Calendar, RefreshCw } from "lucide-react";
+import axiosInstance from "@/lib/axiosInstance";
+import { cn } from "@/lib/utils";
 
-const statusColors: Record<string, string> = {
-  Delivered: "bg-green-100 text-green-700",
-  Shipped: "bg-blue-100 text-blue-700",
-  Pending: "bg-yellow-100 text-yellow-700",
-  Cancelled: "bg-red-100 text-red-700",
+interface BackendOrder {
+  _id: string;
+  email: string;
+  shippingAddress: {
+    firstName: string;
+    lastName: string;
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  items: { name: string; sizeLabel: string; quantity: number; priceAtPurchase: number }[];
+  totalAmount: number;
+  paymentStatus: "pending" | "paid" | "failed";
+  orderStatus: string;
+  createdAt: string;
+}
+
+interface DerivedCustomer {
+  email: string;
+  name: string;
+  city: string;
+  state: string;
+  totalOrders: number;
+  paidOrders: number;
+  totalSpent: number;
+  joinDate: string;
+  orders: BackendOrder[];
+}
+
+const orderStatusColors: Record<string, string> = {
+  pending_payment: "bg-gray-100 text-gray-600",
+  processing: "bg-yellow-100 text-yellow-700",
+  shipped: "bg-blue-100 text-blue-700",
+  delivered: "bg-green-100 text-green-700",
+  cancelled: "bg-red-100 text-red-700",
 };
 
+const orderStatusLabel: Record<string, string> = {
+  pending_payment: "Pending Payment",
+  processing: "Processing",
+  shipped: "Shipped",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+};
+
+function deriveCustomers(orders: BackendOrder[]): DerivedCustomer[] {
+  const map = new Map<string, DerivedCustomer>();
+
+  for (const order of orders) {
+    const email = order.email.toLowerCase();
+    if (!map.has(email)) {
+      map.set(email, {
+        email,
+        name: `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`,
+        city: order.shippingAddress.city,
+        state: order.shippingAddress.state,
+        totalOrders: 0,
+        paidOrders: 0,
+        totalSpent: 0,
+        joinDate: order.createdAt,
+        orders: [],
+      });
+    }
+    const c = map.get(email)!;
+    c.totalOrders += 1;
+    if (order.paymentStatus === "paid") {
+      c.paidOrders += 1;
+      c.totalSpent = parseFloat((c.totalSpent + order.totalAmount).toFixed(2));
+    }
+    // Update to most recent name/address
+    const orderDate = new Date(order.createdAt);
+    if (orderDate > new Date(c.joinDate)) {
+      // Keep the latest name/address
+      c.name = `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`;
+      c.city = order.shippingAddress.city;
+      c.state = order.shippingAddress.state;
+    } else {
+      // joinDate is the earliest
+      c.joinDate = order.createdAt;
+    }
+    c.orders.push(order);
+  }
+
+  // Sort each customer's orders by date desc
+  for (const c of map.values()) {
+    c.orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  return [...map.values()].sort((a, b) => b.totalSpent - a.totalSpent);
+}
+
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [customers, setCustomers] = useState<DerivedCustomer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Customer | null>(null);
+  const [selected, setSelected] = useState<DerivedCustomer | null>(null);
 
   const fetchData = useCallback(async () => {
+    setError(false);
     try {
-      const [cRes, oRes] = await Promise.all([
-        fetch("/api/customers", { cache: "no-store" }),
-        fetch("/api/orders", { cache: "no-store" }),
-      ]);
-      setCustomers(await cRes.json());
-      setOrders(await oRes.json());
+      const res = await axiosInstance.get("/order/all?page=1&limit=500");
+      const orders: BackendOrder[] = res.data.orders ?? [];
+      setCustomers(deriveCustomers(orders));
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const totalLTV = customers.reduce((s, c) => s + c.totalSpent, 0);
 
   const filtered = customers.filter((c) => {
     const q = search.toLowerCase();
-    return !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
+    return !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.city.toLowerCase().includes(q);
   });
-
-  const getOrderHistory = (c: Customer) =>
-    orders.filter((o) => c.orderHistory.includes(o.id));
 
   return (
     <div className="space-y-5">
@@ -52,7 +132,7 @@ export default function CustomersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Customers</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{customers.length} registered customers</p>
+          <p className="text-sm text-gray-500 mt-0.5">{customers.length} unique customers</p>
         </div>
         <div className="text-right">
           <p className="text-xl font-black text-gray-900">${totalLTV.toFixed(0)}</p>
@@ -65,7 +145,7 @@ export default function CustomersPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
-          placeholder="Search customers..."
+          placeholder="Search by name, email, or city..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
@@ -78,6 +158,16 @@ export default function CustomersPage() {
           <div className="flex items-center justify-center py-20 text-gray-400 text-sm gap-2">
             <RefreshCw className="w-4 h-4 animate-spin" /> Loading customers...
           </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <p className="text-red-500 text-sm font-semibold">Failed to load customers.</p>
+            <button
+              onClick={() => { setLoading(true); fetchData(); }}
+              className="flex items-center gap-2 text-xs font-semibold text-gray-600 hover:text-gray-900 px-4 py-2 bg-white border border-gray-200 rounded-lg"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Retry
+            </button>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -87,14 +177,14 @@ export default function CustomersPage() {
                   <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden sm:table-cell">Email</th>
                   <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3">Orders</th>
                   <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3">Total Spent</th>
-                  <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden md:table-cell">Joined</th>
+                  <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden md:table-cell">Location</th>
                   <th className="px-3 py-3 w-8"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((c) => (
                   <tr
-                    key={c.id}
+                    key={c.email}
                     onClick={() => setSelected(c)}
                     className="hover:bg-gray-50/60 transition cursor-pointer group"
                   >
@@ -102,7 +192,7 @@ export default function CustomersPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-[#84cc16]/20 flex items-center justify-center flex-shrink-0">
                           <span className="text-xs font-bold text-[#65a30d]">
-                            {c.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                            {c.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
                           </span>
                         </div>
                         <span className="font-semibold text-gray-800">{c.name}</span>
@@ -115,7 +205,9 @@ export default function CustomersPage() {
                       </span>
                     </td>
                     <td className="px-3 py-3.5 font-bold text-gray-800">${c.totalSpent.toFixed(2)}</td>
-                    <td className="px-3 py-3.5 text-gray-400 text-xs hidden md:table-cell">{c.joinDate}</td>
+                    <td className="px-3 py-3.5 text-gray-400 text-xs hidden md:table-cell">
+                      {c.city}, {c.state}
+                    </td>
                     <td className="px-3 py-3.5">
                       <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition" />
                     </td>
@@ -125,10 +217,10 @@ export default function CustomersPage() {
             </table>
           </div>
         )}
-        {!loading && filtered.length === 0 && (
+        {!loading && !error && filtered.length === 0 && (
           <div className="text-center py-16 text-gray-400 text-sm">
             <User className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-            No customers found.
+            {search ? "No customers match your search." : "No customers yet. Orders will appear here."}
           </div>
         )}
       </div>
@@ -146,12 +238,12 @@ export default function CustomersPage() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#84cc16]/20 flex items-center justify-center">
                   <span className="text-sm font-bold text-[#65a30d]">
-                    {selected.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                    {selected.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
                   </span>
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-gray-900">{selected.name}</h3>
-                  <p className="text-xs text-gray-400">{selected.id}</p>
+                  <p className="text-xs text-gray-400">{selected.email}</p>
                 </div>
               </div>
               <button
@@ -175,13 +267,13 @@ export default function CustomersPage() {
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3.5 text-center">
                   <p className="text-xl font-black text-gray-800">
-                    ${selected.totalOrders > 0 ? (selected.totalSpent / selected.totalOrders).toFixed(0) : "0"}
+                    ${selected.paidOrders > 0 ? (selected.totalSpent / selected.paidOrders).toFixed(0) : "0"}
                   </p>
                   <p className="text-[11px] text-gray-400 font-medium mt-0.5">Avg. Order</p>
                 </div>
               </div>
 
-              {/* Basic Info */}
+              {/* Contact Info */}
               <section className="bg-gray-50 rounded-xl p-4 space-y-3">
                 <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Contact Info</h4>
                 <div className="space-y-2">
@@ -193,13 +285,15 @@ export default function CustomersPage() {
                     <Mail className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                     <span className="text-gray-500">{selected.email}</span>
                   </div>
-                  <div className="flex items-start gap-2.5 text-sm">
-                    <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-500 text-xs leading-relaxed">{selected.address}</span>
+                  <div className="flex items-center gap-2.5 text-sm">
+                    <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                    <span className="text-gray-500 text-xs">{selected.city}, {selected.state}</span>
                   </div>
                   <div className="flex items-center gap-2.5 text-sm">
                     <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                    <span className="text-gray-500 text-xs">Member since {selected.joinDate}</span>
+                    <span className="text-gray-500 text-xs">
+                      First order: {new Date(selected.joinDate).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
               </section>
@@ -210,28 +304,29 @@ export default function CustomersPage() {
                   <ShoppingBag className="w-3 h-3" /> Order History
                 </h4>
                 <div className="space-y-2">
-                  {getOrderHistory(selected).length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-4">No orders found.</p>
-                  ) : (
-                    getOrderHistory(selected).map((order) => (
-                      <div
-                        key={order.id}
-                        className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3"
-                      >
-                        <div>
-                          <p className="text-xs font-mono text-gray-400">{order.id}</p>
-                          <p className="text-sm font-semibold text-gray-800 mt-0.5">{order.product}</p>
-                          <p className="text-xs text-gray-400">{order.date}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-gray-800">${order.amount.toFixed(2)}</p>
-                          <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusColors[order.status]}`}>
-                            {order.status}
-                          </span>
-                        </div>
+                  {selected.orders.map((order) => (
+                    <div
+                      key={order._id}
+                      className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3"
+                    >
+                      <div>
+                        <p className="text-xs font-mono text-gray-400">#{order._id.slice(-8).toUpperCase()}</p>
+                        <p className="text-sm font-semibold text-gray-800 mt-0.5">
+                          {order.items.map((i) => i.sizeLabel).join(", ")}
+                        </p>
+                        <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
                       </div>
-                    ))
-                  )}
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-gray-800">${order.totalAmount.toFixed(2)}</p>
+                        <span className={cn(
+                          "inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] font-semibold",
+                          orderStatusColors[order.orderStatus] ?? "bg-gray-100 text-gray-600"
+                        )}>
+                          {orderStatusLabel[order.orderStatus] ?? order.orderStatus}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </section>
             </div>

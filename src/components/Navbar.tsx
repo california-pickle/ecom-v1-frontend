@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShoppingCart, Menu, X } from "lucide-react";
-import BulkOrderModal from "./BulkOrderModal";
 import { useCart } from "./CartContext";
 import logo from "../../public/logo.webp";
 const NAV_LINKS = [
@@ -19,7 +18,6 @@ const NAV_LINKS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [bulkOpen, setBulkOpen] = useState(false);
   const { itemCount } = useCart();
   const pathname = usePathname();
 
@@ -101,12 +99,12 @@ export default function Navbar() {
               )}
             </Link>
 
-            <button
-              onClick={() => setBulkOpen(true)}
+            <Link
+              href="/checkout"
               className="hidden sm:inline-flex items-center bg-black text-white text-[15px] md:text-[16px] font-black uppercase tracking-wider px-10 py-4 rounded-sm hover:bg-[#a3e635] hover:text-black hover:scale-105 active:scale-95 transition-all duration-300"
             >
-              Bulk Order
-            </button>
+              Shop Now
+            </Link>
 
             {/* Mobile menu toggle */}
             <button
@@ -132,20 +130,17 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <button
-              onClick={() => {
-                setMobileOpen(false);
-                setBulkOpen(true);
-              }}
-              className="w-full mt-6 bg-black text-white text-base font-black uppercase tracking-widest py-4 rounded-sm hover:bg-[#a3e635] hover:text-black transition-all active:scale-95"
+            <Link
+              href="/checkout"
+              onClick={() => setMobileOpen(false)}
+              className="block w-full mt-6 bg-black text-white text-base font-black uppercase tracking-widest py-4 rounded-sm hover:bg-[#a3e635] hover:text-black transition-all active:scale-95 text-center"
             >
-              Bulk Order
-            </button>
+              Shop Now
+            </Link>
           </div>
         )}
       </header>
 
-      <BulkOrderModal open={bulkOpen} onClose={() => setBulkOpen(false)} />
     </>
   );
 }
