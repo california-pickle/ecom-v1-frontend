@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 
 export interface CartItem {
   id: string;
@@ -21,30 +27,55 @@ interface CartContextType {
   clearCart: () => void;
   total: number;
   itemCount: number;
+  isMounted: boolean; // UI render korar shomoy hydration error theke bachte eta lagbe
 }
 
 const CartContext = createContext<CartContextType | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
-  const addItem = useCallback((item: Omit<CartItem, "quantity">, quantity = 1) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
-      if (existing) {
-        return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + quantity } : i
-        );
+  // ১. Page load howar sathe sathe localStorage theke data anbe
+  useEffect(() => {
+    setIsMounted(true);
+    const savedCart = localStorage.getItem("cart_items");
+    if (savedCart) {
+      try {
+        setItems(JSON.parse(savedCart));
+      } catch (error) {
+        console.error("Failed to parse cart items", error);
       }
-      return [
-        ...prev,
-        {
-          ...item,
-          quantity,
-        },
-      ];
-    });
+    }
   }, []);
+
+  // ২. Jokhon-i items er state change hobe, sathe sathe localStorage-e save korbe
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem("cart_items", JSON.stringify(items));
+    }
+  }, [items, isMounted]);
+
+  const addItem = useCallback(
+    (item: Omit<CartItem, "quantity">, quantity = 1) => {
+      setItems((prev) => {
+        const existing = prev.find((i) => i.id === item.id);
+        if (existing) {
+          return prev.map((i) =>
+            i.id === item.id ? { ...i, quantity: i.quantity + quantity } : i,
+          );
+        }
+        return [
+          ...prev,
+          {
+            ...item,
+            quantity,
+          },
+        ];
+      });
+    },
+    [],
+  );
 
   const removeItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
@@ -55,9 +86,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setItems((prev) => prev.filter((i) => i.id !== id));
       return;
     }
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, quantity } : i))
-    );
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity } : i)));
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
@@ -75,6 +104,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clearCart,
         total,
         itemCount,
+        isMounted,
       }}
     >
       {children}

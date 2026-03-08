@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AdminSidebar, AdminTopbar } from "@/components/admin/AdminLayout";
 
-const PUBLIC_PATHS = ["/admin/login", "/admin/forgot-password"];
+const PUBLIC_PATHS = ["/admin/login", "/admin/forgot-password", "/admin/reset-password"];
 
 export default function AdminShellLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAdminAuth();

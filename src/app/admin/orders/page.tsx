@@ -1,91 +1,177 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Order } from "@/lib/db";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axiosInstance";
 import {
-  Search, X, ChevronRight, MapPin, CreditCard, Truck,
-  Package, FileText, CheckCircle, XCircle, RefreshCw, Send
+  Search,
+  X,
+  ChevronRight,
+  MapPin,
+  CreditCard,
+  Truck,
+  Package,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Send,
 } from "lucide-react";
 
-const statusColors: Record<string, string> = {
-  Delivered: "bg-green-100 text-green-700",
-  Shipped: "bg-blue-100 text-blue-700",
-  Pending: "bg-yellow-100 text-yellow-700",
-  Cancelled: "bg-red-100 text-red-700",
+// ─── Types (matching backend Order model) ───────────────────
+type OrderStatus = "processing" | "shipped" | "delivered" | "cancelled";
+type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+
+interface OrderItem {
+  productId: string;
+  variantId: string;
+  name: string;
+  sizeLabel: string;
+  quantity: number;
+  priceAtPurchase: number;
+}
+
+interface ShippingAddress {
+  firstName: string;
+  lastName: string;
+  street: string;
+  aptOrSuite?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  phone: string;
+}
+
+interface Order {
+  _id: string;
+  email: string;
+  shippingAddress: ShippingAddress;
+  items: OrderItem[];
+  totalAmount: number;
+  orderStatus: OrderStatus;
+  paymentStatus: PaymentStatus;
+  stripeSessionId?: string;
+  createdAt: string;
+}
+
+interface OrdersResponse {
+  data: Order[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+// ─── Status color maps ───────────────────────────────────────
+const statusColors: Record<OrderStatus, string> = {
+  delivered: "bg-green-100 text-green-700",
+  shipped: "bg-blue-100 text-blue-700",
+  processing: "bg-yellow-100 text-yellow-700",
+  cancelled: "bg-red-100 text-red-700",
 };
 
-const paymentColors: Record<string, string> = {
-  Paid: "bg-green-100 text-green-700",
-  Refunded: "bg-gray-100 text-gray-600",
-  Pending: "bg-yellow-100 text-yellow-700",
+const paymentColors: Record<PaymentStatus, string> = {
+  paid: "bg-green-100 text-green-700",
+  refunded: "bg-gray-100 text-gray-600",
+  pending: "bg-yellow-100 text-yellow-700",
+  failed: "bg-red-100 text-red-700",
 };
 
-const STATUS_FILTERS = ["All", "Pending", "Shipped", "Delivered", "Cancelled"];
+const STATUS_FILTERS = [
+  "All",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+];
 
+// ─── API calls ───────────────────────────────────────────────
+const fetchOrders = async (page = 1): Promise<OrdersResponse> => {
+  const res = await axiosInstance.get(`/orders?page=${page}&limit=50`);
+  return res.data;
+};
+
+const updateStatus = async ({
+  id,
+  orderStatus,
+}: {
+  id: string;
+  orderStatus: OrderStatus;
+}) => {
+  const res = await axiosInstance.patch(`/orders/${id}`, { orderStatus });
+  return res.data.order as Order;
+};
+
+// ─── Helper ──────────────────────────────────────────────────
+const fullName = (addr: ShippingAddress) =>
+  `${addr.firstName} ${addr.lastName}`;
+const fullAddress = (addr: ShippingAddress) =>
+  `${addr.street}${addr.aptOrSuite ? `, ${addr.aptOrSuite}` : ""}, ${addr.city}, ${addr.state} ${addr.zipCode}`;
+
+// ─── Component ───────────────────────────────────────────────
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [notes, setNotes] = useState<Record<string, string>>({});
-  const [savingNote, setSavingNote] = useState(false);
+  const [page, setPage] = useState(1);
 
-  const fetchOrders = useCallback(async () => {
-    try {
-      const res = await fetch("/api/orders", { cache: "no-store" });
-      const data = await res.json();
-      setOrders(data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // ✅ Fetch orders from backend
+  const { data, isLoading } = useQuery({
+    queryKey: ["orders", page],
+    queryFn: () => fetchOrders(page),
+  });
 
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+  const orders = data?.data ?? [];
+  const pagination = data?.pagination;
 
+  // ✅ Update order status
+  const updateMutation = useMutation({
+    mutationFn: updateStatus,
+    onSuccess: (updatedOrder) => {
+      // Update cache directly — no refetch needed
+      queryClient.setQueryData(
+        ["orders", page],
+        (old: OrdersResponse | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((o) =>
+              o._id === updatedOrder._id ? updatedOrder : o,
+            ),
+          };
+        },
+      );
+      // Update drawer if open
+      setSelectedOrder((prev) =>
+        prev?._id === updatedOrder._id ? updatedOrder : prev,
+      );
+    },
+  });
+
+  // ─── Filter ───────────────────────────────────────────────
   const filtered = orders.filter((o) => {
-    const matchStatus = statusFilter === "All" || o.status === statusFilter;
+    const matchStatus =
+      statusFilter === "All" || o.orderStatus === statusFilter;
     const q = search.toLowerCase();
+    const name = fullName(o.shippingAddress).toLowerCase();
     const matchSearch =
       !q ||
-      o.id.toLowerCase().includes(q) ||
-      o.customer.toLowerCase().includes(q) ||
-      o.product.toLowerCase().includes(q);
+      o._id.toLowerCase().includes(q) ||
+      name.includes(q) ||
+      o.email.toLowerCase().includes(q) ||
+      o.items.some((item) => item.name.toLowerCase().includes(q));
     return matchStatus && matchSearch;
   });
 
-  const patchOrder = async (id: string, patch: Partial<Order>) => {
-    const res = await fetch(`/api/orders/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-    });
-    const updated: Order = await res.json();
-    setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
-    setSelectedOrder((prev) => (prev?.id === id ? updated : prev));
-  };
-
-  const saveNote = async (id: string) => {
-    setSavingNote(true);
-    await patchOrder(id, { notes: notes[id] ?? "" });
-    setSavingNote(false);
-  };
-
-  const issueRefund = async (id: string) => {
-    await patchOrder(id, { status: "Cancelled", paymentStatus: "Refunded" });
-  };
-
-  const openDrawer = (order: Order) => {
-    setSelectedOrder(order);
-    if (notes[order.id] === undefined) {
-      setNotes((n) => ({ ...n, [order.id]: order.notes }));
-    }
+  // ─── Actions ──────────────────────────────────────────────
+  const patchStatus = (id: string, orderStatus: OrderStatus) => {
+    updateMutation.mutate({ id, orderStatus });
   };
 
   const liveOrder = selectedOrder
-    ? orders.find((o) => o.id === selectedOrder.id) ?? selectedOrder
+    ? (orders.find((o) => o._id === selectedOrder._id) ?? selectedOrder)
     : null;
 
   return (
@@ -94,10 +180,12 @@ export default function OrdersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Orders</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Manage and track all customer orders</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Manage and track all customer orders
+          </p>
         </div>
         <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full">
-          {orders.length} total
+          {pagination?.total ?? 0} total
         </span>
       </div>
 
@@ -107,7 +195,7 @@ export default function OrdersPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by name, order ID..."
+            placeholder="Search by name, order ID, email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
@@ -118,7 +206,7 @@ export default function OrdersPage() {
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all capitalize ${
                 statusFilter === s
                   ? "bg-[#84cc16] text-black shadow-sm"
                   : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
@@ -132,7 +220,7 @@ export default function OrdersPage() {
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-20 text-gray-400 text-sm gap-2">
             <RefreshCw className="w-4 h-4 animate-spin" /> Loading orders...
           </div>
@@ -141,32 +229,58 @@ export default function OrdersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-5 py-3">Order ID</th>
-                  <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3">Customer</th>
-                  <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden md:table-cell">Product</th>
-                  <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3">Amount</th>
-                  <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3">Status</th>
-                  <th className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-3 py-3 hidden lg:table-cell">Date</th>
-                  <th className="px-3 py-3 w-8"></th>
+                  {[
+                    "Order ID",
+                    "Customer",
+                    "Product",
+                    "Amount",
+                    "Status",
+                    "Date",
+                    "",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide px-5 py-3"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((order) => (
                   <tr
-                    key={order.id}
-                    onClick={() => openDrawer(order)}
+                    key={order._id}
+                    onClick={() => setSelectedOrder(order)}
                     className="hover:bg-gray-50/60 transition cursor-pointer group"
                   >
-                    <td className="px-5 py-3.5 font-mono text-xs text-gray-500 font-medium">{order.id}</td>
-                    <td className="px-3 py-3.5 font-semibold text-gray-800">{order.customer}</td>
-                    <td className="px-3 py-3.5 text-gray-500 hidden md:table-cell max-w-[160px] truncate">{order.product}</td>
-                    <td className="px-3 py-3.5 font-bold text-gray-800">${order.amount.toFixed(2)}</td>
+                    <td className="px-5 py-3.5 font-mono text-xs text-gray-500 font-medium">
+                      #{order._id.slice(-6).toUpperCase()}
+                    </td>
                     <td className="px-3 py-3.5">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusColors[order.status]}`}>
-                        {order.status}
+                      <div className="font-semibold text-gray-800">
+                        {fullName(order.shippingAddress)}
+                      </div>
+                      <div className="text-xs text-gray-400">{order.email}</div>
+                    </td>
+                    <td className="px-3 py-3.5 text-gray-500 hidden md:table-cell max-w-[160px] truncate">
+                      {order.items
+                        .map((i) => `${i.name} (${i.sizeLabel})`)
+                        .join(", ")}
+                    </td>
+                    <td className="px-3 py-3.5 font-bold text-gray-800">
+                      ${order.totalAmount.toFixed(2)}
+                    </td>
+                    <td className="px-3 py-3.5">
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${statusColors[order.orderStatus]}`}
+                      >
+                        {order.orderStatus}
                       </span>
                     </td>
-                    <td className="px-3 py-3.5 text-gray-400 text-xs hidden lg:table-cell">{order.date}</td>
+                    <td className="px-3 py-3.5 text-gray-400 text-xs hidden lg:table-cell">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </td>
                     <td className="px-3 py-3.5">
                       <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition" />
                     </td>
@@ -176,13 +290,41 @@ export default function OrdersPage() {
             </table>
           </div>
         )}
-        {!loading && filtered.length === 0 && (
+
+        {!isLoading && filtered.length === 0 && (
           <div className="text-center py-16 text-gray-400 text-sm">
             <Package className="w-8 h-8 mx-auto mb-2 text-gray-300" />
             No orders found.
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-400 text-xs">
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold disabled:opacity-40 hover:bg-gray-50 transition"
+            >
+              ← Prev
+            </button>
+            <button
+              onClick={() =>
+                setPage((p) => Math.min(pagination.totalPages, p + 1))
+              }
+              disabled={page === pagination.totalPages}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold disabled:opacity-40 hover:bg-gray-50 transition"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Detail Drawer */}
       {liveOrder && (
@@ -195,8 +337,12 @@ export default function OrdersPage() {
             {/* Drawer Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
               <div>
-                <p className="text-[11px] text-gray-400 font-mono font-medium">{liveOrder.id}</p>
-                <h3 className="text-base font-bold text-gray-900 mt-0.5">{liveOrder.customer}</h3>
+                <p className="text-[11px] text-gray-400 font-mono font-medium">
+                  #{liveOrder._id.slice(-8).toUpperCase()}
+                </p>
+                <h3 className="text-base font-bold text-gray-900 mt-0.5">
+                  {fullName(liveOrder.shippingAddress)}
+                </h3>
               </div>
               <button
                 onClick={() => setSelectedOrder(null)}
@@ -210,10 +356,14 @@ export default function OrdersPage() {
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
               {/* Status badges */}
               <div className="flex gap-2 flex-wrap">
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusColors[liveOrder.status]}`}>
-                  {liveOrder.status}
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${statusColors[liveOrder.orderStatus]}`}
+                >
+                  {liveOrder.orderStatus}
                 </span>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${paymentColors[liveOrder.paymentStatus]}`}>
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${paymentColors[liveOrder.paymentStatus]}`}
+                >
                   {liveOrder.paymentStatus}
                 </span>
               </div>
@@ -224,25 +374,55 @@ export default function OrdersPage() {
                   <MapPin className="w-3 h-3" /> Customer Info
                 </h4>
                 <div className="space-y-1 text-sm">
-                  <p className="font-semibold text-gray-800">{liveOrder.customer}</p>
+                  <p className="font-semibold text-gray-800">
+                    {fullName(liveOrder.shippingAddress)}
+                  </p>
                   <p className="text-gray-500">{liveOrder.email}</p>
-                  <p className="text-gray-500 text-xs leading-relaxed">{liveOrder.address}</p>
+                  <p className="text-gray-500 text-xs">
+                    {liveOrder.shippingAddress.phone}
+                  </p>
+                  <p className="text-gray-500 text-xs leading-relaxed">
+                    {fullAddress(liveOrder.shippingAddress)}
+                  </p>
                 </div>
               </section>
 
-              {/* Order Info */}
+              {/* Order Items */}
               <section className="bg-gray-50 rounded-xl p-4">
                 <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
                   <Package className="w-3 h-3" /> Order Details
                 </h4>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">{liveOrder.product}</span>
-                    <span className="text-sm font-medium text-gray-500">×{liveOrder.quantity}</span>
-                  </div>
+                  {liveOrder.items.map((item, i) => (
+                    <div
+                      key={i}
+                      className="flex justify-between items-center text-sm"
+                    >
+                      <div>
+                        <span className="text-gray-800 font-medium">
+                          {item.name}
+                        </span>
+                        <span className="text-gray-400 text-xs ml-1">
+                          ({item.sizeLabel})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-gray-400 text-xs">
+                          ×{item.quantity}
+                        </span>
+                        <span className="text-gray-600 font-medium">
+                          ${(item.priceAtPurchase * item.quantity).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                   <div className="border-t border-gray-200 pt-2 flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-700">Total</span>
-                    <span className="text-base font-black text-gray-900">${liveOrder.amount.toFixed(2)}</span>
+                    <span className="text-sm font-semibold text-gray-700">
+                      Total
+                    </span>
+                    <span className="text-base font-black text-gray-900">
+                      ${liveOrder.totalAmount.toFixed(2)}
+                    </span>
                   </div>
                 </div>
               </section>
@@ -253,75 +433,97 @@ export default function OrdersPage() {
                   <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 mb-2">
                     <Truck className="w-3 h-3" /> Shipping
                   </h4>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[liveOrder.status]}`}>
-                    {liveOrder.status}
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusColors[liveOrder.orderStatus]}`}
+                  >
+                    {liveOrder.orderStatus}
                   </span>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3.5">
                   <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 mb-2">
                     <CreditCard className="w-3 h-3" /> Payment
                   </h4>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${paymentColors[liveOrder.paymentStatus]}`}>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${paymentColors[liveOrder.paymentStatus]}`}
+                  >
                     {liveOrder.paymentStatus}
                   </span>
                 </div>
               </section>
 
-              {/* Internal Notes */}
-              <section>
-                <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                  <FileText className="w-3 h-3" /> Internal Notes
-                </h4>
-                <textarea
-                  value={notes[liveOrder.id] ?? liveOrder.notes}
-                  onChange={(e) => setNotes((n) => ({ ...n, [liveOrder.id]: e.target.value }))}
-                  rows={3}
-                  placeholder="Add a private note..."
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#84cc16] resize-none text-gray-700 placeholder:text-gray-300"
-                />
-                <button
-                  onClick={() => saveNote(liveOrder.id)}
-                  disabled={savingNote}
-                  className="mt-1.5 text-xs font-semibold text-[#65a30d] hover:underline disabled:opacity-50"
-                >
-                  {savingNote ? "Saving..." : "Save note"}
-                </button>
-              </section>
+              {/* Error message */}
+              {updateMutation.isError && (
+                <div className="bg-red-50 border border-red-200 text-red-600 text-xs px-3 py-2 rounded-lg">
+                  ⚠ Failed to update order. Please try again.
+                </div>
+              )}
             </div>
 
-            {/* Actions */}
+            {/* Actions Footer */}
             <div className="px-6 py-4 border-t border-gray-100 bg-white space-y-2">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Actions</p>
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                Update Status
+              </p>
               <div className="grid grid-cols-2 gap-2">
+                {/* Mark Shipped */}
                 <button
-                  onClick={() => patchOrder(liveOrder.id, { status: "Shipped" })}
-                  disabled={liveOrder.status === "Shipped" || liveOrder.status === "Delivered" || liveOrder.status === "Cancelled"}
+                  onClick={() => patchStatus(liveOrder._id, "shipped")}
+                  disabled={
+                    liveOrder.orderStatus === "shipped" ||
+                    liveOrder.orderStatus === "delivered" ||
+                    liveOrder.orderStatus === "cancelled" ||
+                    updateMutation.isPending
+                  }
                   className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Send className="w-3.5 h-3.5" /> Mark Shipped
                 </button>
+
+                {/* Mark Delivered */}
                 <button
-                  onClick={() => patchOrder(liveOrder.id, { status: "Delivered" })}
-                  disabled={liveOrder.status === "Delivered" || liveOrder.status === "Cancelled"}
+                  onClick={() => patchStatus(liveOrder._id, "delivered")}
+                  disabled={
+                    liveOrder.orderStatus === "delivered" ||
+                    liveOrder.orderStatus === "cancelled" ||
+                    updateMutation.isPending
+                  }
                   className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-green-50 text-green-700 hover:bg-green-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <CheckCircle className="w-3.5 h-3.5" /> Mark Delivered
                 </button>
+
+                {/* Cancel Order */}
                 <button
-                  onClick={() => patchOrder(liveOrder.id, { status: "Cancelled" })}
-                  disabled={liveOrder.status === "Cancelled" || liveOrder.status === "Delivered"}
+                  onClick={() => patchStatus(liveOrder._id, "cancelled")}
+                  disabled={
+                    liveOrder.orderStatus === "cancelled" ||
+                    liveOrder.orderStatus === "delivered" ||
+                    updateMutation.isPending
+                  }
                   className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-red-50 text-red-700 hover:bg-red-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <XCircle className="w-3.5 h-3.5" /> Cancel Order
                 </button>
+
+                {/* Back to Processing */}
                 <button
-                  onClick={() => issueRefund(liveOrder.id)}
-                  disabled={liveOrder.paymentStatus === "Refunded" || liveOrder.paymentStatus === "Pending"}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-orange-50 text-orange-700 hover:bg-orange-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={() => patchStatus(liveOrder._id, "processing")}
+                  disabled={
+                    liveOrder.orderStatus === "processing" ||
+                    liveOrder.orderStatus === "delivered" ||
+                    updateMutation.isPending
+                  }
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" /> Issue Refund
+                  <RefreshCw className="w-3.5 h-3.5" /> Processing
                 </button>
               </div>
+
+              {updateMutation.isPending && (
+                <p className="text-center text-xs text-gray-400 animate-pulse mt-2">
+                  Updating...
+                </p>
+              )}
             </div>
           </div>
         </div>
