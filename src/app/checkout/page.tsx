@@ -39,9 +39,38 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name } = e.target;
+    let value = e.target.value;
+
+    // Enforce per-field rules — block invalid chars and cap length
+    switch (name) {
+      case "firstName":
+      case "lastName":
+        value = value.replace(/[^a-zA-Z\s'-]/g, "").slice(0, 50);
+        break;
+      case "email":
+        value = value.slice(0, 100);
+        break;
+      case "address":
+        value = value.slice(0, 100);
+        break;
+      case "city":
+        value = value.replace(/[^a-zA-Z\s'-]/g, "").slice(0, 50);
+        break;
+      case "state":
+        value = value.replace(/[^a-zA-Z]/g, "").slice(0, 2).toUpperCase();
+        break;
+      case "zip":
+        value = value.replace(/\D/g, "").slice(0, 5);
+        break;
+      case "phone":
+        value = value.replace(/\D/g, "").slice(0, 10);
+        break;
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
     // Reset rates when address changes
-    if (["address", "city", "state", "zip"].includes(e.target.name)) {
+    if (["address", "city", "state", "zip"].includes(name)) {
       setRatesLoaded(false);
       setSelectedRate(null);
       setRates([]);
@@ -217,6 +246,7 @@ export default function CheckoutPage() {
                           onChange={handleFormChange}
                           required
                           minLength={2}
+                          maxLength={50}
                           placeholder="JOHN"
                           className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
                         />
@@ -232,6 +262,7 @@ export default function CheckoutPage() {
                           onChange={handleFormChange}
                           required
                           minLength={2}
+                          maxLength={50}
                           placeholder="SMITH"
                           className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
                         />
@@ -247,6 +278,7 @@ export default function CheckoutPage() {
                         value={form.email}
                         onChange={handleFormChange}
                         required
+                        maxLength={100}
                         placeholder="JOHN@EXAMPLE.COM"
                         className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
                       />
@@ -271,6 +303,7 @@ export default function CheckoutPage() {
                         onChange={handleFormChange}
                         required
                         minLength={5}
+                        maxLength={100}
                         placeholder="123 MAIN STREET"
                         className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
                       />
@@ -287,6 +320,7 @@ export default function CheckoutPage() {
                           onChange={handleFormChange}
                           required
                           minLength={2}
+                          maxLength={50}
                           placeholder="LOS ANGELES"
                           className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
                         />
@@ -320,6 +354,8 @@ export default function CheckoutPage() {
                           onChange={handleFormChange}
                           required
                           pattern="\d{5}"
+                          maxLength={5}
+                          inputMode="numeric"
                           placeholder="90210"
                           className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
                         />
@@ -334,6 +370,8 @@ export default function CheckoutPage() {
                           value={form.phone}
                           onChange={handleFormChange}
                           required
+                          maxLength={10}
+                          inputMode="numeric"
                           placeholder="2135550198"
                           className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
                         />
