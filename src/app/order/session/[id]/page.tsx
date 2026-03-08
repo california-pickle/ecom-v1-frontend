@@ -34,6 +34,8 @@ export default function OrderSuccessPage({
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    // Stop polling after 3 minutes to prevent infinite requests
+    const timeout = setTimeout(() => clearInterval(interval), 3 * 60 * 1000);
 
     async function fetchOrder() {
       try {
@@ -54,7 +56,7 @@ export default function OrderSuccessPage({
 
     fetchOrder();
     interval = setInterval(fetchOrder, 3000);
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); clearTimeout(timeout); };
   }, [id]);
 
   useEffect(() => {
