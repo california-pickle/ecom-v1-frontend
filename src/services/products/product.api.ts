@@ -8,7 +8,7 @@ export const fetchStorefrontProducts = async () => {
 
 // 2. Admin (Private) - Admin Dashboard er product list er jonno
 export const fetchAdminAllProducts = async () => {
-  const response = await axiosInstance.get("/products/admin/all");
+  const response = await axiosInstance.get("/products/all");
   return response.data; // Eta 'requireAuth' tai auto token niye nibe
 };
 
