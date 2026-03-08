@@ -19,7 +19,7 @@ interface ShippingRate {
 }
 
 export default function CheckoutPage() {
-  const { items, updateQuantity, total, clearCart } = useCart();
+  const { items, updateQuantity, total } = useCart();
 
   const [form, setForm] = useState({
     firstName: "",
@@ -161,7 +161,6 @@ export default function CheckoutPage() {
       }
 
       if (data.checkoutUrl) {
-        clearCart();
         window.location.href = data.checkoutUrl;
       } else {
         toast.error("No checkout URL received. Please try again.");
