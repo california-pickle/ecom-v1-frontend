@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, Zap, Leaf, FlaskConical, Star } from "lucide-react";
+import hero from "../../../public/hero.jpg";
+import mobilehero from "../../../public/mobilehero.jpg";
 
 const TICKER_ITEMS = [
   "STOP CRAMPS FAST",
@@ -26,9 +28,9 @@ function scrollTo(id: string) {
 ───────────────────────────────────────────────────────────────────────────── */
 function DesktopHero() {
   return (
-    <div className="hidden lg:flex relative min-h-[90vh] items-center">
+    <div className=" hidden lg:flex relative min-h-[90vh] items-center">
       <Image
-        src="/images/hero-desktop.jpg"
+        src={hero}
         alt="The California Pickle Sports Drink"
         fill
         priority
@@ -55,14 +57,14 @@ function DesktopHero() {
             </span>
           </div>
 
-          <h1 className="text-7xl xl:text-8xl font-black text-black leading-[0.85] tracking-tighter mb-8 uppercase">
-            Stop Muscle
+          <h1 className="text-5xl md:text-7xl xl:text-8xl font-black text-black leading-[0.85] tracking-tighter mb-8 uppercase">
+            Stop&nbsp;Muscle
             <br />
             <span className="text-[#a3e635] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
               Cramps
             </span>
             <br />
-            in Seconds.
+            <span className="whitespace-nowrap">in Seconds</span>
           </h1>
 
           <p className="text-sm text-black font-medium max-w-md leading-tight mb-8 uppercase tracking-tight">
@@ -104,6 +106,20 @@ function DesktopHero() {
           </div>
         </div>
       </div>
+      {/* Ticker — always visible */}
+      <div className=" absolute bottom-0 left-0 bg-black text-white overflow-hidden py-3">
+        <div className="ticker-track">
+          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-3 px-6 text-xs sm:text-sm font-bold tracking-widest whitespace-nowrap"
+            >
+              <span className="text-[#a3e635]">★</span>
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -127,7 +143,7 @@ function MobileHero() {
     <div className="lg:hidden relative min-h-[100svh] flex flex-col">
       {/* ── Background image — full viewport, portrait ── */}
       <Image
-        src="/images/hero-mobile.jpg"
+        src={mobilehero}
         alt="The California Pickle Sports Drink"
         fill
         priority
@@ -172,7 +188,6 @@ function MobileHero() {
 
       {/* ── Content overlay — anchored to bottom ── */}
       <div className="relative z-10 px-5 sm:px-7 md:px-10 pb-8 sm:pb-10 md:pb-14">
-
         {/* Badge */}
         <div className="inline-flex items-center gap-2 mb-5 sm:mb-6">
           <div className="flex items-center gap-1.5 bg-[#e8f55a]/20 border border-[#e8f55a]/60 backdrop-blur-sm rounded-sm px-3 py-1.5">
@@ -197,7 +212,8 @@ function MobileHero() {
 
         {/* Description */}
         <p className="text-sm sm:text-base md:text-lg text-white/85 font-medium leading-snug mb-6 sm:mb-8 uppercase tracking-tight max-w-sm">
-          Fast-acting electrolyte shot. Real pickle brine. Works in under 80&nbsp;seconds.
+          Fast-acting electrolyte shot. Real pickle brine. Works in under
+          80&nbsp;seconds.
         </p>
 
         {/* CTAs */}
@@ -248,21 +264,6 @@ export default function HeroSection() {
     <section id="hero" className="relative overflow-hidden flex flex-col">
       <DesktopHero />
       <MobileHero />
-
-      {/* Ticker — always visible */}
-      <div className="bg-black text-white overflow-hidden py-3">
-        <div className="ticker-track">
-          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-3 px-6 text-xs sm:text-sm font-bold tracking-widest whitespace-nowrap"
-            >
-              <span className="text-[#a3e635]">★</span>
-              {item}
-            </span>
-          ))}
-        </div>
-      </div>
     </section>
   );
 }

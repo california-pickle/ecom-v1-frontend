@@ -1,15 +1,18 @@
 "use client";
-
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import axiosInstance from "@/lib/axiosInstance"; // tomar existing axios instance
 
+// ============================================================
+// FORGOT PASSWORD PAGE — Backend connected
+// Copy this to: src/app/admin/forgot-password/page.tsx
+// ============================================================
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,138 +20,214 @@ export default function ForgotPasswordPage() {
     setError("");
 
     try {
-      // API Route: Apnar backend-er exact route ekhane boshaben
-      const response = await fetch(
-        "http://localhost:5000/api/auth/forgot-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          // Zod validation er jonno email pathaccho
-          body: JSON.stringify({ email }),
-        },
+      // ✅ BACKEND: POST /auth/forgot-password { email }
+      // Backend silently return kore jodi email na thake, tai always success dekhao
+      await axiosInstance.post("/auth/forgot-password", { email });
+      setSent(true);
+    } catch (err: any) {
+      // Network error ba server error
+      setError(
+        err?.response?.data?.message ||
+          "Something went wrong. Please try again.",
       );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSubmitted(true);
-        // Backend theke asha message ta state a save korchi
-        setSuccessMessage(data.message);
-      } else {
-        // Zod theke validation error ashle ba backend theke error ashle
-        if (data.errors) {
-          setError("Please provide a valid email address.");
-        } else {
-          setError(data.message || "Something went wrong. Please try again.");
-        }
-      }
-    } catch (err) {
-      setError("Server error. Cannot connect to the backend.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <div className="w-10 h-10 bg-[#84cc16] rounded-lg flex items-center justify-center">
-              <span className="text-black font-black text-lg">P</span>
-            </div>
-            <span className="text-2xl font-black text-gray-900 tracking-tight">
-              PICKLE
-            </span>
-            <span className="text-2xl font-black text-[#84cc16] tracking-tight">
-              ADMIN
-            </span>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap');
+        @keyframes fadeDown {
+          from { opacity: 0; transform: translateY(-16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes popIn {
+          from { transform: scale(0); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+
+      <div className="min-h-screen bg-[#f4f6f3] flex flex-col items-center justify-center px-4 relative overflow-hidden">
+        {/* Background grid */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(100,170,40,0.06) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(100,170,40,0.06) 1px, transparent 1px)
+            `,
+            backgroundSize: "40px 40px",
+          }}
+        />
+
+        {/* Green blob top-right */}
+        <div
+          className="absolute top-[-100px] right-[-100px] w-[500px] h-[500px] rounded-full pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(100,190,30,0.12) 0%, transparent 70%)",
+          }}
+        />
+
+        {/* Logo */}
+        <div
+          className="flex items-center gap-2.5 mb-8 z-10"
+          style={{ animation: "fadeDown 0.6s ease both" }}
+        >
+          <div
+            className="w-[42px] h-[42px] rounded-[10px] flex items-center justify-center font-extrabold text-lg text-[#1a2a0a]"
+            style={{
+              background: "linear-gradient(135deg, #7dc61e, #5aa012)",
+              boxShadow: "0 4px 14px rgba(100,190,30,0.35)",
+              fontFamily: "'Syne', sans-serif",
+            }}
+          >
+            P
           </div>
+          <span
+            className="font-bold text-xl tracking-wide text-[#1a2a0a]"
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
+            PICKLE <span className="text-[#7dc61e]">ADMIN</span>
+          </span>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          {!submitted ? (
+        {/* Card */}
+        <div
+          className="bg-white rounded-[18px] w-full max-w-[440px] z-10 relative"
+          style={{
+            padding: "40px 44px",
+            boxShadow:
+              "0 1px 3px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)",
+            animation: "fadeUp 0.7s ease both",
+          }}
+        >
+          {/* Top accent bar */}
+          <div
+            className="absolute top-0 left-6 right-6 h-[3px] rounded-b-[4px]"
+            style={{ background: "linear-gradient(90deg, #7dc61e, #b5f03c)" }}
+          />
+
+          {!sent ? (
             <>
-              <h1 className="text-xl font-bold text-gray-900 mb-1">
-                Reset Password
+              <h1
+                className="text-[22px] font-bold text-[#0f1f05] mb-2"
+                style={{ fontFamily: "'Syne', sans-serif" }}
+              >
+                Forgot Password?
               </h1>
-              <p className="text-gray-500 text-sm mb-6">
-                Enter your admin email address and we&apos;ll send you
-                instructions to reset your password.
+              <p className="text-[13.5px] text-[#7a8a6a] leading-relaxed mb-7">
+                Enter your admin email and we'll send you a link to reset your
+                password.
               </p>
 
-              {/* Error Message Alert */}
               {error && (
-                <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
-                  {error}
+                <div className="bg-red-50 border border-red-200 text-red-600 text-[13px] px-4 py-3 rounded-[8px] mb-4">
+                  ⚠️ {error}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Admin Email
-                  </label>
+              <form onSubmit={handleSubmit}>
+                <label className="block text-[13px] font-medium text-[#3a4a2a] mb-2">
+                  Admin Email
+                </label>
+                <div className="relative mb-5">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#aabba0] pointer-events-none">
+                    ✉
+                  </span>
                   <input
                     type="email"
+                    placeholder="admin@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent transition"
-                    placeholder="admin@example.com"
                     required
+                    className="w-full pl-10 pr-4 py-3 border-[1.5px] border-[#dde8d5] rounded-[10px] text-[14px] text-[#1a2a0a] bg-[#fafcf8] outline-none transition-all focus:border-[#7dc61e] focus:bg-white focus:shadow-[0_0_0_3px_rgba(125,198,30,0.12)] placeholder:text-[#b0c4a0]"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full bg-[#84cc16] hover:bg-[#65a30d] text-black font-bold py-2.5 rounded-lg text-sm transition flex justify-center items-center ${
-                    loading ? "opacity-70 cursor-not-allowed" : ""
-                  }`}
+                  className="w-full py-3.5 rounded-[10px] font-bold text-[15px] text-[#0f1f05] border-none cursor-pointer transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed hover:-translate-y-[1px]"
+                  style={{
+                    background: "linear-gradient(135deg, #7dc61e, #6ab518)",
+                    boxShadow: "0 4px 14px rgba(100,190,30,0.3)",
+                    fontFamily: "'Syne', sans-serif",
+                  }}
                 >
                   {loading ? (
-                    <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></span>
-                  ) : null}
-                  {loading ? "Sending..." : "Send Reset Request"}
+                    <>
+                      <div className="w-4 h-4 border-2 border-[rgba(15,31,5,0.2)] border-t-[#0f1f05] rounded-full animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send Reset Link →"
+                  )}
                 </button>
               </form>
+
+              <button
+                onClick={() => router.push("/admin/login")}
+                className="flex items-center justify-center gap-1.5 mx-auto mt-5 text-[13.5px] text-[#8a9a7a] bg-transparent border-none cursor-pointer hover:text-[#5aa012] transition-colors w-full"
+              >
+                ← Back to Sign In
+              </button>
             </>
           ) : (
-            <div className="text-center py-4">
-              <CheckCircle className="w-12 h-12 text-[#84cc16] mx-auto mb-3" />
-              <h2 className="text-lg font-bold text-gray-900 mb-2">
-                Request Sent Successfully
+            /* Success — email sent */
+            <div
+              className="text-center py-2"
+              style={{ animation: "fadeUp 0.5s ease both" }}
+            >
+              <div
+                className="w-[60px] h-[60px] rounded-full flex items-center justify-center text-[28px] mx-auto mb-4"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(125,198,30,0.15), rgba(125,198,30,0.3))",
+                  animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both",
+                }}
+              >
+                📬
+              </div>
+              <h2
+                className="text-[20px] font-bold text-[#0f1f05] mb-2"
+                style={{ fontFamily: "'Syne', sans-serif" }}
+              >
+                Check Your Email!
               </h2>
-              <p className="text-gray-500 text-sm mb-6">
-                {/* Ekhane backend theke pathano message ta dekhano hobe */}
-                {successMessage}
+              <p className="text-[13.5px] text-[#7a8a6a] leading-relaxed mb-6">
+                If <span className="text-[#5aa012] font-medium">{email}</span>{" "}
+                is registered, you'll receive a password reset link shortly.
               </p>
 
-              {/* Reset korar por ba link check korar por login e back korar option */}
-              <Link
-                href="/admin/login"
-                className="block w-full bg-gray-900 hover:bg-black text-white font-bold py-2.5 rounded-lg text-sm transition text-center"
-              >
-                Return to Login
-              </Link>
-            </div>
-          )}
+              {/* Helpful tips */}
+              <div className="bg-[#f8fdf0] border border-[#dde8d5] rounded-[10px] px-4 py-3 text-left mb-6">
+                <p className="text-[12.5px] text-[#5a7a3a] font-medium mb-1">
+                  💡 Didn't get the email?
+                </p>
+                <ul className="text-[12px] text-[#7a8a6a] space-y-1 list-none">
+                  <li>• Check your spam/junk folder</li>
+                  <li>• Link expires in 15 minutes</li>
+                </ul>
+              </div>
 
-          {!submitted && (
-            <div className="mt-6 text-center">
-              <Link
-                href="/admin/login"
-                className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+              <button
+                onClick={() => router.push("/admin/login")}
+                className="flex items-center justify-center gap-1.5 mx-auto text-[13.5px] text-[#8a9a7a] bg-transparent border-none cursor-pointer hover:text-[#5aa012] transition-colors"
               >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Sign In
-              </Link>
+                ← Back to Sign In
+              </button>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

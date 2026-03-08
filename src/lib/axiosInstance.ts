@@ -84,7 +84,7 @@ axiosInstance.interceptors.response.use(
       try {
         // AUTO REFRESH: Tomar backend endpoint jodi '/auth/refresh-token' hoy
         // Backend e jodi oita 'POST' hoy, tobe ekhane .post koro
-        await axios.post(`${API_BASE_URL}/auth/refresh`, {
+        await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
           withCredentials: true,
         });
 
