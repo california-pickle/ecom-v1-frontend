@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Bell,
   Activity,
+  ClipboardList,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ interface Notification {
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/bulk-orders", label: "Bulk Orders", icon: ClipboardList, priority: true },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/customers", label: "Customers", icon: Users },
@@ -70,7 +72,7 @@ export function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onC
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {navItems.map(({ href, label, icon: Icon, priority }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
@@ -80,13 +82,27 @@ export function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onC
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
                 active
-                  ? "bg-[#84cc16]/10 text-[#65a30d]"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                  ? priority
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-[#84cc16]/10 text-[#65a30d]"
+                  : priority
+                    ? "text-amber-700 hover:bg-amber-50 bg-amber-50/50"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
               )}
             >
-              <Icon className={cn("w-4 h-4 flex-shrink-0", active ? "text-[#65a30d]" : "text-gray-400 group-hover:text-gray-600")} />
-              {label}
-              {active && <ChevronRight className="w-3 h-3 ml-auto text-[#65a30d]" />}
+              <Icon className={cn(
+                "w-4 h-4 flex-shrink-0",
+                active
+                  ? priority ? "text-amber-700" : "text-[#65a30d]"
+                  : priority ? "text-amber-500" : "text-gray-400 group-hover:text-gray-600"
+              )} />
+              <span className="flex-1">{label}</span>
+              {priority && !active && (
+                <span className="text-[9px] font-black bg-amber-400 text-white px-1.5 py-0.5 rounded uppercase tracking-wide">
+                  PRIORITY
+                </span>
+              )}
+              {active && <ChevronRight className={cn("w-3 h-3", priority ? "text-amber-700" : "text-[#65a30d]")} />}
             </Link>
           );
         })}

@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import {
   TrendingUp, ShoppingCart, Users, DollarSign,
-  ArrowUpRight, RefreshCw, AlertTriangle,
+  ArrowUpRight, RefreshCw, AlertTriangle, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -53,6 +53,7 @@ interface DashboardStats {
   chartData: { date: string; revenue: number }[];
   recentOrders: BackendOrder[];
   lowStockVariants: { productName: string; sizeLabel: string; stock: number; status: string }[];
+  activeBulkLeads: number;
 }
 
 const orderStatusColors: Record<string, string> = {
@@ -79,9 +80,10 @@ export default function DashboardPage() {
   const fetchDashboard = useCallback(async () => {
     setError(false);
     try {
-      const [ordersRes, productsRes] = await Promise.all([
+      const [ordersRes, productsRes, bulkRes] = await Promise.all([
         axiosInstance.get("/order/all?page=1&limit=500"),
         axiosInstance.get("/products/all"),
+        fetch("/api/bulk-orders", { cache: "no-store" }).then((r) => r.json()).catch(() => []),
       ]);
 
       const orders: BackendOrder[] = ordersRes.data.orders ?? [];
@@ -130,6 +132,9 @@ export default function DashboardPage() {
         }
       }
 
+      const bulkOrders: { status: string }[] = Array.isArray(bulkRes) ? bulkRes : [];
+      const activeBulkLeads = bulkOrders.filter((b) => b.status === "New" || b.status === "Contacted").length;
+
       setStats({
         totalRevenue,
         totalOrders: orders.length,
@@ -140,6 +145,7 @@ export default function DashboardPage() {
         chartData,
         recentOrders,
         lowStockVariants,
+        activeBulkLeads,
       });
     } catch {
       setError(true);
@@ -243,6 +249,29 @@ export default function DashboardPage() {
             Manage →
           </Link>
         </div>
+      )}
+
+      {/* Bulk Leads Priority Banner */}
+      {stats.activeBulkLeads > 0 && (
+        <Link
+          href="/admin/bulk-orders"
+          className="flex items-center gap-3 bg-amber-50 border-2 border-amber-400 rounded-xl px-4 py-3 hover:bg-amber-100 transition group"
+        >
+          <div className="w-8 h-8 bg-amber-400 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Star className="w-4 h-4 text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-black text-amber-900 uppercase tracking-wide">
+              {stats.activeBulkLeads} Bulk {stats.activeBulkLeads === 1 ? "Inquiry" : "Inquiries"} Need Attention
+            </p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Priority leads waiting — click to manage
+            </p>
+          </div>
+          <span className="text-xs font-semibold text-amber-700 group-hover:underline flex-shrink-0">
+            View Now →
+          </span>
+        </Link>
       )}
 
       {/* KPI Cards */}

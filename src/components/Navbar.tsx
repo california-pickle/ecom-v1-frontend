@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingCart, Menu, X } from "lucide-react";
+import { ShoppingCart, Menu, X, Package } from "lucide-react";
 import { useCart } from "./CartContext";
+import BulkOrderModal from "./BulkOrderModal";
 import logo from "../../public/logo.webp";
 const NAV_LINKS = [
   { label: "Home", href: "/#hero" },
@@ -18,6 +19,7 @@ const NAV_LINKS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const { itemCount } = useCart();
   const pathname = usePathname();
 
@@ -82,7 +84,16 @@ export default function Navbar() {
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 md:gap-6">
+            {/* Bulk Order Button — desktop */}
+            <button
+              onClick={() => setBulkOpen(true)}
+              className="hidden md:inline-flex items-center gap-2 border-2 border-black text-black text-[13px] font-black uppercase tracking-wider px-5 py-3 rounded-sm hover:bg-[#a3e635] hover:scale-105 active:scale-95 transition-all duration-200"
+            >
+              <Package size={16} strokeWidth={3} />
+              Bulk Order
+            </button>
+
             <Link
               href="/checkout"
               className="relative p-2 rounded-full hover:bg-gray-100 transition-colors group"
@@ -101,7 +112,7 @@ export default function Navbar() {
 
             <Link
               href="/checkout"
-              className="hidden sm:inline-flex items-center bg-black text-white text-[15px] md:text-[16px] font-black uppercase tracking-wider px-10 py-4 rounded-sm hover:bg-[#a3e635] hover:text-black hover:scale-105 active:scale-95 transition-all duration-300"
+              className="hidden sm:inline-flex items-center bg-black text-white text-[15px] md:text-[16px] font-black uppercase tracking-wider px-8 py-4 rounded-sm hover:bg-[#a3e635] hover:text-black hover:scale-105 active:scale-95 transition-all duration-300"
             >
               Shop Now
             </Link>
@@ -130,10 +141,16 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+            <button
+              onClick={() => { setMobileOpen(false); setBulkOpen(true); }}
+              className="block w-full mt-4 border-2 border-black text-black text-base font-black uppercase tracking-widest py-4 rounded-sm hover:bg-[#a3e635] transition-all active:scale-95 text-center"
+            >
+              Bulk Order
+            </button>
             <Link
               href="/checkout"
               onClick={() => setMobileOpen(false)}
-              className="block w-full mt-6 bg-black text-white text-base font-black uppercase tracking-widest py-4 rounded-sm hover:bg-[#a3e635] hover:text-black transition-all active:scale-95 text-center"
+              className="block w-full mt-2 bg-black text-white text-base font-black uppercase tracking-widest py-4 rounded-sm hover:bg-[#a3e635] hover:text-black transition-all active:scale-95 text-center"
             >
               Shop Now
             </Link>
@@ -141,6 +158,7 @@ export default function Navbar() {
         )}
       </header>
 
+      <BulkOrderModal open={bulkOpen} onClose={() => setBulkOpen(false)} />
     </>
   );
 }

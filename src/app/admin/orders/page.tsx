@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axiosInstance";
 import {
@@ -16,8 +16,13 @@ import {
   RefreshCw,
   Send,
   Mail,
+  Star,
+  Phone,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────
 type OrderStatus = "pending_payment" | "processing" | "shipped" | "delivered" | "cancelled";
@@ -107,6 +112,20 @@ const fullName = (addr: ShippingAddress) => `${addr.firstName} ${addr.lastName}`
 const fullAddress = (addr: ShippingAddress) =>
   `${addr.street}${addr.aptOrSuite ? `, ${addr.aptOrSuite}` : ""}, ${addr.city}, ${addr.state} ${addr.zipCode}`;
 
+// ─── Bulk Order type ─────────────────────────────────────────
+interface BulkInquiry {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  quantity: string;
+  message: string;
+  status: "New" | "Contacted" | "Closed" | "Cancelled";
+  date: string;
+  time: string;
+}
+
 // ─── Component ───────────────────────────────────────────────
 export default function OrdersPage() {
   const queryClient = useQueryClient();
@@ -114,6 +133,46 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [page, setPage] = useState(1);
+
+  // Bulk inquiries — pinned at top
+  const [bulkOrders, setBulkOrders] = useState<BulkInquiry[]>([]);
+  const [updatingBulk, setUpdatingBulk] = useState<string | null>(null);
+
+  const fetchBulkOrders = useCallback(async () => {
+    try {
+      const res = await fetch("/api/bulk-orders", { cache: "no-store" });
+      if (res.ok) {
+        const all: BulkInquiry[] = await res.json();
+        // Only show New + Contacted at top; Closed/Cancelled are removed from priority view
+        setBulkOrders(all.filter((b) => b.status === "New" || b.status === "Contacted"));
+      }
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => { fetchBulkOrders(); }, [fetchBulkOrders]);
+
+  const updateBulkStatus = async (id: string, status: BulkInquiry["status"]) => {
+    setUpdatingBulk(id);
+    try {
+      const res = await fetch(`/api/bulk-orders/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error();
+      if (status === "Closed" || status === "Cancelled") {
+        setBulkOrders((prev) => prev.filter((b) => b.id !== id));
+      } else {
+        const updated: BulkInquiry = await res.json();
+        setBulkOrders((prev) => prev.map((b) => (b.id === id ? updated : b)));
+      }
+      toast.success(`Bulk inquiry marked as ${status}`);
+    } catch {
+      toast.error("Failed to update bulk inquiry.");
+    } finally {
+      setUpdatingBulk(null);
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["orders", page],
@@ -203,6 +262,101 @@ export default function OrdersPage() {
           ))}
         </div>
       </div>
+
+      {/* ─── BULK INQUIRY PRIORITY SECTION ─── */}
+      {bulkOrders.length > 0 && (
+        <div className="bg-amber-50 border-2 border-amber-400 rounded-xl overflow-hidden shadow-sm">
+          <div className="flex items-center justify-between px-5 py-3 bg-amber-400/30 border-b border-amber-300">
+            <div className="flex items-center gap-2">
+              <Star className="w-4 h-4 text-amber-700" />
+              <span className="text-sm font-black text-amber-900 uppercase tracking-wide">
+                Bulk Order Inquiries — Priority
+              </span>
+              <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                {bulkOrders.length} pending
+              </span>
+            </div>
+            <Link
+              href="/admin/bulk-orders"
+              className="text-xs font-semibold text-amber-700 hover:underline flex items-center gap-1"
+            >
+              Manage all <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="divide-y divide-amber-200">
+            {bulkOrders.map((bulk) => (
+              <div
+                key={bulk.id}
+                className={cn(
+                  "flex items-start gap-4 px-5 py-4",
+                  bulk.status === "New" ? "bg-amber-50" : "bg-amber-50/40"
+                )}
+              >
+                {/* Status dot */}
+                <div className={cn(
+                  "w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5",
+                  bulk.status === "New" ? "bg-amber-500 ring-2 ring-amber-300 animate-pulse" : "bg-blue-400"
+                )} />
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-gray-900 text-sm">{bulk.name}</span>
+                    {bulk.company && <span className="text-xs text-gray-500">· {bulk.company}</span>}
+                    <span className={cn(
+                      "text-[10px] font-black px-2 py-0.5 rounded-full uppercase",
+                      bulk.status === "New" ? "bg-amber-400 text-white" : "bg-blue-100 text-blue-700"
+                    )}>
+                      {bulk.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    <span className="font-semibold">Qty:</span> {bulk.quantity}
+                  </p>
+                  {bulk.message && (
+                    <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{bulk.message}</p>
+                  )}
+                  <div className="flex items-center gap-3 mt-1.5 text-[11px] text-gray-400">
+                    <a href={`mailto:${bulk.email}`} className="flex items-center gap-1 hover:text-blue-600 transition">
+                      <Mail className="w-3 h-3" /> {bulk.email}
+                    </a>
+                    <a href={`tel:${bulk.phone}`} className="flex items-center gap-1 hover:text-green-600 transition">
+                      <Phone className="w-3 h-3" /> {bulk.phone}
+                    </a>
+                  </div>
+                </div>
+
+                {/* Quick actions */}
+                <div className="flex gap-2 flex-shrink-0 flex-wrap">
+                  {bulk.status === "New" && (
+                    <button
+                      onClick={() => updateBulkStatus(bulk.id, "Contacted")}
+                      disabled={updatingBulk === bulk.id}
+                      className="px-3 py-1.5 text-[11px] font-bold bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition disabled:opacity-40"
+                    >
+                      Contacted
+                    </button>
+                  )}
+                  <button
+                    onClick={() => updateBulkStatus(bulk.id, "Closed")}
+                    disabled={updatingBulk === bulk.id}
+                    className="px-3 py-1.5 text-[11px] font-bold bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition disabled:opacity-40"
+                  >
+                    Close / Won
+                  </button>
+                  <button
+                    onClick={() => updateBulkStatus(bulk.id, "Cancelled")}
+                    disabled={updatingBulk === bulk.id}
+                    className="px-3 py-1.5 text-[11px] font-bold bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition disabled:opacity-40"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">

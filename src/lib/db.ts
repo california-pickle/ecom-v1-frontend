@@ -1,9 +1,22 @@
 /**
- * In-memory store for notifications and activity logs only.
- * Orders/customers/products/settings are now served from the real backend.
+ * In-memory store for bulk orders, notifications, and activity logs.
+ * Orders/customers/products/settings are served from the real backend.
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface BulkOrder {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  quantity: string;
+  message: string;
+  status: "New" | "Contacted" | "Closed" | "Cancelled";
+  date: string;
+  time: string;
+}
 
 export interface Notification {
   id: string;
@@ -36,14 +49,20 @@ const seedLogs: ActivityLog[] = [
   { id: "LOG-002", action: "Status Changed", detail: "Order marked as Shipped", date: "2026-02-27", time: "14:22" },
 ];
 
+// ─── Seed bulk orders ─────────────────────────────────────────────────────────
+
+const seedBulkOrders: BulkOrder[] = [];
+
 // ─── Singleton global store ───────────────────────────────────────────────────
 
 declare global {
   // eslint-disable-next-line no-var
   var __db:
     | {
+        bulkOrders: BulkOrder[];
         notifications: Notification[];
         logs: ActivityLog[];
+        bulkCounter: number;
         notifCounter: number;
         logCounter: number;
       }
@@ -52,8 +71,10 @@ declare global {
 
 if (!global.__db) {
   global.__db = {
+    bulkOrders: [...seedBulkOrders],
     notifications: [...seedNotifications],
     logs: [...seedLogs],
+    bulkCounter: 0,
     notifCounter: 1,
     logCounter: 2,
   };
@@ -62,6 +83,11 @@ if (!global.__db) {
 export const db = global.__db;
 
 // ─── ID generators ────────────────────────────────────────────────────────────
+
+export function generateBulkId(): string {
+  db.bulkCounter += 1;
+  return `BLK-${String(db.bulkCounter).padStart(3, "0")}`;
+}
 
 export function generateNotifId(): string {
   db.notifCounter += 1;
