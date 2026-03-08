@@ -85,15 +85,7 @@ export default function Navbar() {
 
           {/* Right actions */}
           <div className="flex items-center gap-4 md:gap-6">
-            {/* Bulk Order Button — desktop */}
-            <button
-              onClick={() => setBulkOpen(true)}
-              className="hidden md:inline-flex items-center gap-2 border-2 border-black text-black text-[13px] font-black uppercase tracking-wider px-5 py-3 rounded-sm hover:bg-[#a3e635] hover:scale-105 active:scale-95 transition-all duration-200"
-            >
-              <Package size={16} strokeWidth={3} />
-              Bulk Order
-            </button>
-
+            {/* Cart icon */}
             <Link
               href="/checkout"
               className="relative p-2 rounded-full hover:bg-gray-100 transition-colors group"
@@ -110,12 +102,14 @@ export default function Navbar() {
               )}
             </Link>
 
-            <Link
-              href="/checkout"
-              className="hidden sm:inline-flex items-center bg-black text-white text-[15px] md:text-[16px] font-black uppercase tracking-wider px-8 py-4 rounded-sm hover:bg-[#a3e635] hover:text-black hover:scale-105 active:scale-95 transition-all duration-300"
+            {/* Bulk Order CTA — replaces Shop Now */}
+            <button
+              onClick={() => setBulkOpen(true)}
+              className="hidden sm:inline-flex items-center gap-2 bg-black text-white text-[14px] md:text-[15px] font-black uppercase tracking-wider px-7 py-4 rounded-sm hover:bg-[#a3e635] hover:text-black hover:scale-105 active:scale-95 transition-all duration-300"
             >
-              Shop Now
-            </Link>
+              <Package size={16} strokeWidth={3} />
+              Bulk Order
+            </button>
 
             {/* Mobile menu toggle */}
             <button
@@ -143,17 +137,10 @@ export default function Navbar() {
             ))}
             <button
               onClick={() => { setMobileOpen(false); setBulkOpen(true); }}
-              className="block w-full mt-4 border-2 border-black text-black text-base font-black uppercase tracking-widest py-4 rounded-sm hover:bg-[#a3e635] transition-all active:scale-95 text-center"
+              className="block w-full mt-4 bg-black text-white text-base font-black uppercase tracking-widest py-4 rounded-sm hover:bg-[#a3e635] hover:text-black transition-all active:scale-95 text-center"
             >
               Bulk Order
             </button>
-            <Link
-              href="/checkout"
-              onClick={() => setMobileOpen(false)}
-              className="block w-full mt-2 bg-black text-white text-base font-black uppercase tracking-widest py-4 rounded-sm hover:bg-[#a3e635] hover:text-black transition-all active:scale-95 text-center"
-            >
-              Shop Now
-            </Link>
           </div>
         )}
       </header>
