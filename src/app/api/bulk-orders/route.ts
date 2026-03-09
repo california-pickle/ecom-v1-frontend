@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, generateBulkId, addNotification, addLog, today, nowTime } from "@/lib/db";
+import { db, generateBulkId, addNotification, addLog, today, nowTime, persistDb } from "@/lib/db";
 
 // GET /api/bulk-orders — list all, sorted newest first
 export async function GET() {
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     };
 
     db.bulkOrders.unshift(newBulk);
+    persistDb();
 
     addNotification({
       type: "order",

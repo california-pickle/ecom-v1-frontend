@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Zap, Leaf, FlaskConical, Star } from "lucide-react";
+import { Zap, Leaf, FlaskConical, Star } from "lucide-react";
 import hero from "../../../public/hero.jpg";
 import mobilehero from "../../../public/mobilehero.jpg";
 
@@ -19,16 +19,19 @@ const TICKER_ITEMS = [
 
 function scrollTo(id: string) {
   const el = document.getElementById(id);
-  if (el) el.scrollIntoView({ behavior: "smooth" });
+  if (el) {
+    const top = el.getBoundingClientRect().top + window.scrollY - 64;
+    window.scrollTo({ top, behavior: "smooth" });
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
    DESKTOP HERO  (lg+)
    Cinematic full-width background. White-fade overlay on left half.
 ───────────────────────────────────────────────────────────────────────────── */
-function DesktopHero() {
+function DesktopHero({ productSlug }: { productSlug: string }) {
   return (
-    <div className=" hidden lg:flex relative min-h-[90vh] items-center">
+    <div className="hidden lg:flex relative min-h-[calc(100vh-5rem)] items-center">
       <Image
         src={hero}
         alt="The California Pickle Sports Drink"
@@ -74,7 +77,7 @@ function DesktopHero() {
 
           <div className="flex gap-4 mb-12">
             <Link
-              href="/product/california-pickle"
+              href={`/product/${productSlug}`}
               className="btn-primary text-center min-w-[200px]"
             >
               Buy Now
@@ -138,9 +141,9 @@ function DesktopHero() {
    No product image rendered — bottle is already in the background image.
    No navbar — floating cart icon only at top-right.
 ───────────────────────────────────────────────────────────────────────────── */
-function MobileHero() {
+function MobileHero({ productSlug }: { productSlug: string }) {
   return (
-    <div className="lg:hidden relative min-h-[100svh] flex flex-col">
+    <div className="lg:hidden relative min-h-[calc(100svh-5rem)] flex flex-col">
       {/* ── Background image — full viewport, portrait ── */}
       <Image
         src={mobilehero}
@@ -161,30 +164,8 @@ function MobileHero() {
         }}
       />
 
-      {/* ── Floating top bar — cart icon only, no nav ── */}
-      <div className="relative z-10 flex items-center justify-between px-5 pt-5 pb-0 sm:px-7 sm:pt-7">
-        {/* Logo wordmark */}
-        <span
-          className="font-black text-white text-lg tracking-tighter uppercase leading-none"
-          style={{ textShadow: "0 2px 8px rgba(0,0,0,0.4)" }}
-        >
-          California
-          <br />
-          <span className="text-[#e8f55a]">Pickle</span>
-        </span>
-
-        {/* Cart icon */}
-        <Link
-          href="/product/california-pickle"
-          aria-label="Shop now"
-          className="flex items-center justify-center w-11 h-11 rounded-full border-2 border-white/70 bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors"
-        >
-          <ShoppingCart size={20} className="text-white" />
-        </Link>
-      </div>
-
-      {/* ── Spacer pushes content to bottom third ── */}
-      <div className="flex-1" />
+      {/* Spacer for navbar + pushes content to bottom */}
+      <div className="flex-1 min-h-[100px]" />
 
       {/* ── Content overlay — anchored to bottom ── */}
       <div className="relative z-10 px-5 sm:px-7 md:px-10 pb-8 sm:pb-10 md:pb-14">
@@ -220,7 +201,7 @@ function MobileHero() {
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-10">
           {/* Primary — white bg, deep olive text, matches bottle label dark green */}
           <Link
-            href="/product/california-pickle"
+            href={`/product/${productSlug}`}
             className="inline-flex items-center justify-center bg-white text-[#1a3300] font-black uppercase tracking-widest px-7 py-4 border-2 border-white hover:bg-[#e8f55a] hover:text-[#1a3300] transition-all duration-200 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.5)] hover:shadow-none text-sm sm:min-w-[180px]"
           >
             Buy Now
@@ -259,11 +240,11 @@ function MobileHero() {
 /* ─────────────────────────────────────────────────────────────────────────────
    ROOT EXPORT
 ───────────────────────────────────────────────────────────────────────────── */
-export default function HeroSection() {
+export default function HeroSection({ productSlug = "california-pickle" }: { productSlug?: string }) {
   return (
     <section id="hero" className="relative overflow-hidden flex flex-col">
-      <DesktopHero />
-      <MobileHero />
+      <DesktopHero productSlug={productSlug} />
+      <MobileHero productSlug={productSlug} />
     </section>
   );
 }

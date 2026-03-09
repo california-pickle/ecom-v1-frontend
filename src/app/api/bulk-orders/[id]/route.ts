@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, addLog, today } from "@/lib/db";
+import { db, addLog, today, persistDb } from "@/lib/db";
 
 // PATCH /api/bulk-orders/[id] — update status
 export async function PATCH(
@@ -17,6 +17,7 @@ export async function PATCH(
 
   const prev = bulk.status;
   bulk.status = status;
+  persistDb();
 
   addLog("Bulk Inquiry Updated", `${bulk.name} (${bulk.company || bulk.email}) — ${prev} → ${status}`);
 

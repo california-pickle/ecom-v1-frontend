@@ -17,6 +17,7 @@ export interface SizeOption {
   price: number;
   sublabel: string;
   variantId?: string;
+  images?: string[];
 }
 
 export interface KeyFeature {

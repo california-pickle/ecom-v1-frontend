@@ -22,6 +22,9 @@
 
 # misc
 .DS_Store
+
+# persistent in-memory db (auto-generated, do not commit)
+/data/
 *.pem
 
 # debug

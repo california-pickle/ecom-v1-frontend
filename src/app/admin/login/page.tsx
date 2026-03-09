@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // 1. ASOL BACKEND ENGINE IMPORT KORCHI EKHAANE:
 import { useLogin } from "@/services/auth/auth.hooks";
+import { useAdminAuth } from "@/lib/admin-auth";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminLoginPage() {
+  const { isAuthenticated } = useAdminAuth();
+  const router = useRouter();
+
+  // Redirect authenticated admins to dashboard
+  useEffect(() => {
+    if (isAuthenticated) router.replace("/admin/dashboard");
+  }, [isAuthenticated, router]);
+
   // 2. AMADER TANSTACK QUERY HOOK NEYA HOLO
   const { mutate: loginAdmin, isPending, isError, error } = useLogin();
 
@@ -20,6 +30,15 @@ export default function AdminLoginPage() {
     e.preventDefault();
     loginAdmin({ email, password }); // Payload pathacchi
   };
+
+  // Don't render login form while redirecting authenticated users
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#84cc16] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

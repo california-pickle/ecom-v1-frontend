@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, ChevronRight, X, User, Mail, MapPin, ShoppingBag, Calendar, RefreshCw } from "lucide-react";
 import axiosInstance from "@/lib/axiosInstance";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface BackendOrder {
   _id: string;
@@ -103,12 +104,93 @@ export default function CustomersPage() {
   const [error, setError] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<DerivedCustomer | null>(null);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailForm, setEmailForm] = useState({ subject: "", body: "" });
+  const [couponEnabled, setCouponEnabled] = useState(false);
+  const [discountPercent, setDiscountPercent] = useState(10);
+  const [couponExpiryDays, setCouponExpiryDays] = useState(7);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailTemplates, setEmailTemplates] = useState<{ id: string; name: string; type: string; subject: string; fields: Record<string, string>; body: string }[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+
+  const openEmailModal = () => {
+    setEmailForm({ subject: "", body: "" });
+    setCouponEnabled(false);
+    setDiscountPercent(10);
+    setSelectedTemplateId("");
+    setEmailModalOpen(true);
+    // Fetch templates
+    fetch("/api/emails/templates").then((r) => r.json()).then((t) => setEmailTemplates(t)).catch(() => {});
+  };
+
+  const applyTemplate = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    if (!templateId || !selected) { setEmailForm({ subject: "", body: "" }); return; }
+    const tpl = emailTemplates.find((t) => t.id === templateId);
+    if (!tpl) return;
+    if (tpl.type === "order_confirmation") {
+      setEmailForm({
+        subject: tpl.subject,
+        body: `Hi ${selected.name},\n\n${tpl.fields.greeting || ""}\n\nOrder details will be included automatically.\n\n${tpl.fields.closing || ""}`,
+      });
+    } else if (tpl.type === "shipping_update") {
+      setEmailForm({
+        subject: tpl.subject,
+        body: `Hi ${selected.name},\n\n${tpl.fields.message || ""}\n\nTracking details will be included automatically.\n\n${tpl.fields.closing || ""}`,
+      });
+    } else {
+      setEmailForm({ subject: tpl.subject || "", body: tpl.body || "" });
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!selected || !emailForm.subject.trim() || !emailForm.body.trim()) return;
+    setSendingEmail(true);
+    try {
+      let couponCode: string | undefined;
+      if (couponEnabled) {
+        const couponRes = await fetch("/api/coupons", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            discountPercent,
+            expiresAt: new Date(Date.now() + couponExpiryDays * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            note: `Created for ${selected.name}`,
+          }),
+        });
+        const couponData = await couponRes.json();
+        couponCode = couponData.code;
+      }
+      let finalBody = emailForm.body;
+      if (couponCode) {
+        const expiryDate = new Date(Date.now() + couponExpiryDays * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+        finalBody += `\n\nHere's a ${discountPercent}% discount just for you! Use code: ${couponCode}\nValid until ${expiryDate}.`;
+      }
+      await fetch("/api/emails/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: selected.email,
+          toName: selected.name,
+          subject: emailForm.subject,
+          body: finalBody,
+          ...(couponCode && { couponCode }),
+        }),
+      });
+      toast.success(`Email sent to ${selected.name}`);
+      setEmailModalOpen(false);
+    } catch {
+      toast.error("Failed to send email");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     setError(false);
     try {
       const res = await axiosInstance.get("/order/all?page=1&limit=500");
-      const orders: BackendOrder[] = res.data.orders ?? [];
+      const orders: BackendOrder[] = res.data.data ?? [];
       setCustomers(deriveCustomers(orders));
     } catch {
       setError(true);
@@ -227,12 +309,12 @@ export default function CustomersPage() {
 
       {/* Customer Profile Drawer */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-[2px]"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setSelected(null)}
           />
-          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
               <div className="flex items-center gap-3">
@@ -244,6 +326,12 @@ export default function CustomersPage() {
                 <div>
                   <h3 className="text-base font-bold text-gray-900">{selected.name}</h3>
                   <p className="text-xs text-gray-400">{selected.email}</p>
+                  <button
+                    onClick={openEmailModal}
+                    className="mt-1.5 inline-flex items-center gap-1.5 bg-[#84cc16] text-black hover:bg-[#65a30d] px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm"
+                  >
+                    <Mail className="w-3.5 h-3.5" /> Send Email
+                  </button>
                 </div>
               </div>
               <button
@@ -329,6 +417,128 @@ export default function CustomersPage() {
                   ))}
                 </div>
               </section>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Compose Modal */}
+      {emailModalOpen && selected && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-[2px]" onClick={() => setEmailModalOpen(false)} />
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">Send Email</h3>
+              <button
+                onClick={() => setEmailModalOpen(false)}
+                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 transition text-gray-400"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* To */}
+            <div>
+              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">To</label>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 bg-[#84cc16]/10 text-[#65a30d] px-3 py-1.5 rounded-lg text-xs font-semibold">
+                  <Mail className="w-3 h-3" /> {selected.email}
+                </span>
+                <span className="text-xs text-gray-400">{selected.name}</span>
+              </div>
+            </div>
+
+            {/* Template Picker */}
+            <div>
+              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Template</label>
+              <select
+                value={selectedTemplateId}
+                onChange={(e) => applyTemplate(e.target.value)}
+                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
+              >
+                <option value="">Custom (blank)</option>
+                {emailTemplates.filter((t) => t.type !== "custom").map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Subject */}
+            <div>
+              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Subject</label>
+              <input
+                type="text"
+                value={emailForm.subject}
+                onChange={(e) => setEmailForm((f) => ({ ...f, subject: e.target.value }))}
+                placeholder="Email subject..."
+                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
+              />
+            </div>
+
+            {/* Body */}
+            <div>
+              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Body</label>
+              <textarea
+                rows={6}
+                value={emailForm.body}
+                onChange={(e) => setEmailForm((f) => ({ ...f, body: e.target.value }))}
+                placeholder="Write your message..."
+                className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent resize-none"
+              />
+            </div>
+
+            {/* Coupon Toggle */}
+            <div className="bg-gray-50 rounded-lg p-3 space-y-2.5">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={couponEnabled}
+                  onChange={(e) => setCouponEnabled(e.target.checked)}
+                  className="accent-[#84cc16] w-3.5 h-3.5"
+                />
+                <span className="text-xs font-semibold text-gray-700">Attach coupon code</span>
+              </label>
+              {couponEnabled && (
+                <div className="flex items-center gap-3 pl-5.5">
+                  <label className="text-xs text-gray-500">Discount %</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={discountPercent}
+                    onChange={(e) => setDiscountPercent(Math.min(50, Math.max(1, Number(e.target.value))))}
+                    className="w-16 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
+                  />
+                  <label className="text-xs text-gray-500">Expires</label>
+                  <select
+                    value={couponExpiryDays}
+                    onChange={(e) => setCouponExpiryDays(Number(e.target.value))}
+                    className="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16]"
+                  >
+                    {[3, 4, 5, 6, 7].map((d) => (
+                      <option key={d} value={d}>{d}d</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                onClick={() => setEmailModalOpen(false)}
+                className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendEmail}
+                disabled={sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim()}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#84cc16] text-white text-sm font-semibold rounded-lg hover:bg-[#65a30d] transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                {sendingEmail ? "Sending..." : "Send"}
+              </button>
             </div>
           </div>
         </div>

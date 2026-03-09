@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, Truck, Lock, ChevronRight, RefreshCw, CheckCircle } from "lucide-react";
+import { Minus, Plus, Truck, Lock, ChevronRight, RefreshCw, CheckCircle, X } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { useCart } from "@/components/CartContext";
 import { toast } from "sonner";
 
@@ -38,6 +39,14 @@ export default function CheckoutPage() {
   const [ratesLoaded, setRatesLoaded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [formErrors, setFormErrors] = useState<Record<string, boolean>>({});
+
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<null | { code: string; discountPercent: number }>(null);
+  const [couponError, setCouponError] = useState("");
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name } = e.target;
     let value = e.target.value;
@@ -69,6 +78,7 @@ export default function CheckoutPage() {
     }
 
     setForm((prev) => ({ ...prev, [name]: value }));
+    if (formErrors[name]) setFormErrors((prev) => { const next = {...prev}; delete next[name]; return next; });
     // Reset rates when address changes
     if (["address", "city", "state", "zip"].includes(name)) {
       setRatesLoaded(false);
@@ -77,25 +87,31 @@ export default function CheckoutPage() {
     }
   };
 
-  const isAddressComplete = () =>
-    form.firstName.length >= 2 &&
-    form.lastName.length >= 2 &&
-    form.email.includes("@") &&
-    form.address.length >= 5 &&
-    form.city.length >= 2 &&
-    form.state.length === 2 &&
-    /^\d{5}$/.test(form.zip) &&
-    /^\d{10}$/.test(form.phone.replace(/\D/g, ""));
+  const validateForm = () => {
+    const errors: Record<string, boolean> = {};
+    if (form.firstName.trim().length < 2) errors.firstName = true;
+    if (form.lastName.trim().length < 2) errors.lastName = true;
+    if (!form.email.includes("@") || form.email.length < 5) errors.email = true;
+    if (form.address.trim().length < 5) errors.address = true;
+    if (form.city.trim().length < 2) errors.city = true;
+    if (form.state.length !== 2) errors.state = true;
+    if (!/^\d{5}$/.test(form.zip)) errors.zip = true;
+    if (!/^\d{10}$/.test(form.phone.replace(/\D/g, ""))) errors.phone = true;
+    return errors;
+  };
 
   const fetchShippingRates = async () => {
     if (items.length === 0) {
       toast.error("Your cart is empty.");
       return;
     }
-    if (!isAddressComplete()) {
-      toast.error("Please fill all fields correctly before fetching rates.");
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error("Please fix the highlighted fields.");
       return;
     }
+    setFormErrors({});
 
     setFetchingRates(true);
     try {
@@ -140,6 +156,40 @@ export default function CheckoutPage() {
     }
   };
 
+  const applyCoupon = async () => {
+    const code = couponCode.trim();
+    if (!code) return;
+    setCouponLoading(true);
+    setCouponError("");
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setAppliedCoupon({ code: data.code, discountPercent: data.discountPercent });
+        setCouponError("");
+        toast.success(`Coupon applied — ${data.discountPercent}% off!`);
+      } else {
+        setCouponError(data.message || "Invalid coupon code");
+        setAppliedCoupon(null);
+      }
+    } catch {
+      setCouponError("Failed to validate coupon. Try again.");
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponError("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) {
@@ -174,6 +224,7 @@ export default function CheckoutPage() {
           })),
           shippoRateId: selectedRate.rateId,
           shippingCost: selectedRate.amount,
+          couponCode: appliedCoupon?.code ?? undefined,
         }),
       });
 
@@ -190,6 +241,10 @@ export default function CheckoutPage() {
       }
 
       if (data.checkoutUrl) {
+        // Store coupon for redemption after Stripe payment succeeds
+        if (appliedCoupon) {
+          sessionStorage.setItem("pendingCoupon", appliedCoupon.code);
+        }
         window.location.href = data.checkoutUrl;
       } else {
         toast.error("No checkout URL received. Please try again.");
@@ -201,12 +256,13 @@ export default function CheckoutPage() {
     }
   };
 
-  const grandTotal = total + (selectedRate?.amount ?? 0);
+  const discount = appliedCoupon ? (total * appliedCoupon.discountPercent / 100) : 0;
+  const grandTotal = total - discount + (selectedRate?.amount ?? 0);
 
   return (
     <>
       <Navbar />
-      <main className="pt-20 sm:pt-32 md:pt-40 bg-white min-h-screen">
+      <main className="bg-white min-h-screen">
         {/* Breadcrumb */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-black/40">
@@ -248,7 +304,7 @@ export default function CheckoutPage() {
                           minLength={2}
                           maxLength={50}
                           placeholder="JOHN"
-                          className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
+                          className={`w-full px-4 py-3 border-2 rounded-sm text-sm font-bold focus:outline-none transition-all uppercase placeholder:opacity-30 ${formErrors.firstName ? "border-red-500 bg-red-50 focus:bg-red-50" : "border-black focus:bg-[#a3e635]"}`}
                         />
                       </div>
                       <div>
@@ -264,7 +320,7 @@ export default function CheckoutPage() {
                           minLength={2}
                           maxLength={50}
                           placeholder="SMITH"
-                          className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
+                          className={`w-full px-4 py-3 border-2 rounded-sm text-sm font-bold focus:outline-none transition-all uppercase placeholder:opacity-30 ${formErrors.lastName ? "border-red-500 bg-red-50 focus:bg-red-50" : "border-black focus:bg-[#a3e635]"}`}
                         />
                       </div>
                     </div>
@@ -280,7 +336,7 @@ export default function CheckoutPage() {
                         required
                         maxLength={100}
                         placeholder="JOHN@EXAMPLE.COM"
-                        className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
+                        className={`w-full px-4 py-3 border-2 rounded-sm text-sm font-bold focus:outline-none transition-all uppercase placeholder:opacity-30 ${formErrors.email ? "border-red-500 bg-red-50 focus:bg-red-50" : "border-black focus:bg-[#a3e635]"}`}
                       />
                     </div>
                   </div>
@@ -305,7 +361,7 @@ export default function CheckoutPage() {
                         minLength={5}
                         maxLength={100}
                         placeholder="123 MAIN STREET"
-                        className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
+                        className={`w-full px-4 py-3 border-2 rounded-sm text-sm font-bold focus:outline-none transition-all uppercase placeholder:opacity-30 ${formErrors.address ? "border-red-500 bg-red-50 focus:bg-red-50" : "border-black focus:bg-[#a3e635]"}`}
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -322,7 +378,7 @@ export default function CheckoutPage() {
                           minLength={2}
                           maxLength={50}
                           placeholder="LOS ANGELES"
-                          className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
+                          className={`w-full px-4 py-3 border-2 rounded-sm text-sm font-bold focus:outline-none transition-all uppercase placeholder:opacity-30 ${formErrors.city ? "border-red-500 bg-red-50 focus:bg-red-50" : "border-black focus:bg-[#a3e635]"}`}
                         />
                       </div>
                       <div>
@@ -338,7 +394,7 @@ export default function CheckoutPage() {
                           maxLength={2}
                           minLength={2}
                           placeholder="CA"
-                          className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
+                          className={`w-full px-4 py-3 border-2 rounded-sm text-sm font-bold focus:outline-none transition-all uppercase placeholder:opacity-30 ${formErrors.state ? "border-red-500 bg-red-50 focus:bg-red-50" : "border-black focus:bg-[#a3e635]"}`}
                         />
                       </div>
                     </div>
@@ -352,12 +408,17 @@ export default function CheckoutPage() {
                           name="zip"
                           value={form.zip}
                           onChange={handleFormChange}
+                          onBlur={() => {
+                            if (form.zip.length === 4) {
+                              setForm((prev) => ({ ...prev, zip: "0" + prev.zip }));
+                            }
+                          }}
                           required
                           pattern="\d{5}"
                           maxLength={5}
                           inputMode="numeric"
                           placeholder="90210"
-                          className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
+                          className={`w-full px-4 py-3 border-2 rounded-sm text-sm font-bold focus:outline-none transition-all uppercase placeholder:opacity-30 ${formErrors.zip ? "border-red-500 bg-red-50 focus:bg-red-50" : "border-black focus:bg-[#a3e635]"}`}
                         />
                       </div>
                       <div>
@@ -373,7 +434,7 @@ export default function CheckoutPage() {
                           maxLength={10}
                           inputMode="numeric"
                           placeholder="2135550198"
-                          className="w-full px-4 py-3 border-2 border-black rounded-sm text-sm font-bold focus:outline-none focus:bg-[#a3e635] transition-all uppercase placeholder:opacity-30"
+                          className={`w-full px-4 py-3 border-2 rounded-sm text-sm font-bold focus:outline-none transition-all uppercase placeholder:opacity-30 ${formErrors.phone ? "border-red-500 bg-red-50 focus:bg-red-50" : "border-black focus:bg-[#a3e635]"}`}
                         />
                       </div>
                     </div>
@@ -422,55 +483,56 @@ export default function CheckoutPage() {
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {rates.map((rate) => (
-                        <button
-                          key={rate.rateId}
-                          type="button"
-                          onClick={() => setSelectedRate(rate)}
-                          className={`w-full flex items-center justify-between px-4 py-3 border-2 rounded-sm transition-all text-left ${
-                            selectedRate?.rateId === rate.rateId
-                              ? "border-black bg-[#a3e635] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                              : "border-black/20 hover:border-black bg-white"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-4 h-4 rounded-full border-2 border-black flex items-center justify-center ${selectedRate?.rateId === rate.rateId ? "bg-black" : "bg-white"}`}>
-                              {selectedRate?.rateId === rate.rateId && (
-                                <div className="w-2 h-2 rounded-full bg-[#a3e635]" />
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-[11px] font-black text-black uppercase tracking-tight">
-                                {rate.carrier} — {rate.service}
-                              </p>
-                              <p className="text-[9px] font-black text-black/50 uppercase tracking-widest mt-0.5">
-                                {rate.estimatedDays ? `Est. ${rate.estimatedDays} day${rate.estimatedDays > 1 ? "s" : ""}` : rate.durationTerms || ""}
-                              </p>
-                            </div>
+                    <div className="space-y-4">
+                      {Object.entries(
+                        rates.reduce<Record<string, ShippingRate[]>>((acc, r) => {
+                          (acc[r.carrier] ??= []).push(r);
+                          return acc;
+                        }, {})
+                      ).map(([carrier, carrierRates]) => (
+                        <div key={carrier}>
+                          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-black/40 mb-1.5 px-1">
+                            {carrier}
+                          </p>
+                          <div className="space-y-1.5">
+                            {carrierRates.map((rate) => (
+                              <button
+                                key={rate.rateId}
+                                type="button"
+                                onClick={() => setSelectedRate(rate)}
+                                className={`w-full flex items-center justify-between px-4 py-3 border-2 rounded-sm transition-all text-left ${
+                                  selectedRate?.rateId === rate.rateId
+                                    ? "border-black bg-[#a3e635] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                    : "border-black/20 hover:border-black bg-white"
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-4 h-4 rounded-full border-2 border-black flex items-center justify-center ${selectedRate?.rateId === rate.rateId ? "bg-black" : "bg-white"}`}>
+                                    {selectedRate?.rateId === rate.rateId && (
+                                      <div className="w-2 h-2 rounded-full bg-[#a3e635]" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-[11px] font-black text-black uppercase tracking-tight">
+                                      {rate.service}
+                                    </p>
+                                    <p className="text-[9px] font-black text-black/50 uppercase tracking-widest mt-0.5">
+                                      {rate.estimatedDays ? `Est. ${rate.estimatedDays} day${rate.estimatedDays > 1 ? "s" : ""}` : rate.durationTerms || ""}
+                                    </p>
+                                  </div>
+                                </div>
+                                <span className="text-base font-black text-black tracking-tighter italic">
+                                  ${rate.amount.toFixed(2)}
+                                </span>
+                              </button>
+                            ))}
                           </div>
-                          <span className="text-base font-black text-black tracking-tighter italic">
-                            ${rate.amount.toFixed(2)}
-                          </span>
-                        </button>
+                        </div>
                       ))}
                     </div>
                   )}
                 </div>
 
-                {/* Payment Note */}
-                <div className="bg-[#f9f9f9] border-2 border-black rounded-sm p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                  <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-xl font-black text-black uppercase tracking-tighter italic">Payment</h2>
-                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-black/40">
-                      <Lock size={10} strokeWidth={3} />
-                      SECURE STRIPE CHECKOUT
-                    </div>
-                  </div>
-                  <p className="text-[10px] font-black text-black/40 uppercase tracking-widest leading-relaxed">
-                    YOU WILL BE REDIRECTED TO A SECURE STRIPE PAGE TO COMPLETE YOUR PURCHASE. WE NEVER STORE YOUR CARD DETAILS.
-                  </p>
-                </div>
               </div>
 
               {/* Right: Order summary */}
@@ -538,12 +600,74 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
+                  {/* Coupon Section */}
+                  {items.length > 0 && (
+                    <div className="mt-4">
+                      {!couponOpen && !appliedCoupon ? (
+                        <button
+                          type="button"
+                          onClick={() => setCouponOpen(true)}
+                          className="text-[10px] font-black uppercase tracking-widest text-black/40 hover:text-black transition cursor-pointer flex items-center gap-1"
+                        >
+                          <Plus size={10} strokeWidth={3} /> Apply Coupon Code
+                        </button>
+                      ) : (
+                        <div className="space-y-2">
+                          {!appliedCoupon && (
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={couponCode}
+                                onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }}
+                                placeholder="ENTER CODE"
+                                className="flex-1 border-2 border-black rounded-sm px-3 py-2 text-xs font-black uppercase tracking-wider focus:outline-none focus:bg-[#a3e635]/20 transition"
+                              />
+                              <button
+                                type="button"
+                                onClick={applyCoupon}
+                                disabled={couponLoading || !couponCode.trim()}
+                                className="border-2 border-black px-3 py-2 text-xs font-black uppercase bg-white hover:bg-[#a3e635] transition disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                {couponLoading ? "..." : "Apply"}
+                              </button>
+                            </div>
+                          )}
+                          {couponError && (
+                            <p className="text-[10px] font-black uppercase tracking-widest text-red-600">
+                              {couponError}
+                            </p>
+                          )}
+                          {appliedCoupon && (
+                            <div className="flex items-center justify-between bg-[#a3e635]/20 border-2 border-[#a3e635] rounded-sm px-3 py-2">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-black">
+                                {appliedCoupon.code} applied — {appliedCoupon.discountPercent}% off
+                              </span>
+                              <button
+                                type="button"
+                                onClick={removeCoupon}
+                                className="text-black/60 hover:text-black transition"
+                              >
+                                <X size={12} strokeWidth={3} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {items.length > 0 && (
                     <div className="border-t-2 border-black mt-6 pt-6 space-y-3">
                       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                         <span className="text-black/40">Subtotal</span>
                         <span className="text-black">${total.toFixed(2)}</span>
                       </div>
+                      {appliedCoupon && (
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                          <span className="text-[#65a30d]">Discount ({appliedCoupon.discountPercent}%)</span>
+                          <span className="text-[#65a30d]">-${discount.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                         <span className="text-black/40">Shipping</span>
                         {selectedRate ? (
@@ -597,6 +721,7 @@ export default function CheckoutPage() {
           </form>
         </div>
       </main>
+      <Footer />
     </>
   );
 }
