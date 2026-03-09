@@ -19,6 +19,11 @@ import {
   Star,
   Phone,
   ExternalLink,
+  User,
+  Calendar,
+  Hash,
+  Clock,
+  Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -83,6 +88,14 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-red-100 text-red-700",
 };
 
+const statusDot: Record<string, string> = {
+  delivered: "bg-green-500",
+  shipped: "bg-blue-500",
+  processing: "bg-yellow-500",
+  pending_payment: "bg-gray-400",
+  cancelled: "bg-red-500",
+};
+
 const paymentColors: Record<PaymentStatus, string> = {
   paid: "bg-green-100 text-green-700",
   pending: "bg-yellow-100 text-yellow-700",
@@ -143,7 +156,6 @@ export default function OrdersPage() {
       const res = await fetch("/api/bulk-orders", { cache: "no-store" });
       if (res.ok) {
         const all: BulkInquiry[] = await res.json();
-        // Only show New + Contacted at top; Closed/Cancelled are removed from priority view
         setBulkOrders(all.filter((b) => b.status === "New" || b.status === "Contacted"));
       }
     } catch { /* silent */ }
@@ -293,7 +305,6 @@ export default function OrdersPage() {
                   bulk.status === "New" ? "bg-amber-50" : "bg-amber-50/40"
                 )}
               >
-                {/* Status dot */}
                 <div className={cn(
                   "w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5",
                   bulk.status === "New" ? "bg-amber-500 ring-2 ring-amber-300 animate-pulse" : "bg-blue-400"
@@ -326,7 +337,6 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
-                {/* Quick actions */}
                 <div className="flex gap-2 flex-shrink-0 flex-wrap">
                   {bulk.status === "New" && (
                     <button
@@ -432,33 +442,41 @@ export default function OrdersPage() {
               disabled={page === 1}
               className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold disabled:opacity-40 hover:bg-gray-50 transition"
             >
-              ← Prev
+              Prev
             </button>
             <button
               onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
               disabled={page === pagination.totalPages}
               className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold disabled:opacity-40 hover:bg-gray-50 transition"
             >
-              Next →
+              Next
             </button>
           </div>
         </div>
       )}
 
-      {/* Detail Drawer */}
+      {/* ─── ORDER DETAIL MODAL (centered) ─── */}
       {liveOrder && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-[2px]" onClick={() => setSelectedOrder(null)} />
-          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
-            {/* Drawer Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
-              <div>
-                <p className="text-[11px] text-gray-400 font-mono font-medium">
-                  #{liveOrder._id.slice(-8).toUpperCase()}
-                </p>
-                <h3 className="text-base font-bold text-gray-900 mt-0.5">
-                  {fullName(liveOrder.shippingAddress)}
-                </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setSelectedOrder(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] z-10 flex flex-col overflow-hidden">
+
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Hash className="w-4 h-4 text-gray-400" />
+                  <span className="font-mono text-sm font-bold text-gray-700">{liveOrder._id.slice(-8).toUpperCase()}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${statusColors[liveOrder.orderStatus]}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusDot[liveOrder.orderStatus]}`} />
+                    {liveOrder.orderStatus === "pending_payment" ? "Pending Payment" : liveOrder.orderStatus}
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${paymentColors[liveOrder.paymentStatus]}`}>
+                    {liveOrder.paymentStatus}
+                  </span>
+                </div>
               </div>
               <button
                 onClick={() => setSelectedOrder(null)}
@@ -468,165 +486,190 @@ export default function OrdersPage() {
               </button>
             </div>
 
-            {/* Drawer Body */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-              {/* Status badges */}
-              <div className="flex gap-2 flex-wrap">
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusColors[liveOrder.orderStatus] ?? "bg-gray-100 text-gray-600"}`}>
-                  {liveOrder.orderStatus === "pending_payment" ? "Pending Payment" : liveOrder.orderStatus}
-                </span>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${paymentColors[liveOrder.paymentStatus]}`}>
-                  {liveOrder.paymentStatus}
-                </span>
-              </div>
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-              {/* Customer Info */}
-              <section className="bg-gray-50 rounded-xl p-4 space-y-2">
-                <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
-                  <MapPin className="w-3 h-3" /> Customer Info
-                </h4>
-                <div className="space-y-1 text-sm">
-                  <p className="font-semibold text-gray-800">{fullName(liveOrder.shippingAddress)}</p>
-                  <p className="text-gray-500">{liveOrder.email}</p>
-                  <p className="text-gray-500 text-xs">{liveOrder.shippingAddress.phone}</p>
-                  <p className="text-gray-500 text-xs leading-relaxed">{fullAddress(liveOrder.shippingAddress)}</p>
-                </div>
-              </section>
-
-              {/* Order Items */}
-              <section className="bg-gray-50 rounded-xl p-4">
-                <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
-                  <Package className="w-3 h-3" /> Order Details
-                </h4>
-                <div className="space-y-2">
-                  {liveOrder.items.map((item, i) => (
-                    <div key={i} className="flex justify-between items-center text-sm">
-                      <div>
-                        <span className="text-gray-800 font-medium">{item.name}</span>
-                        <span className="text-gray-400 text-xs ml-1">({item.sizeLabel})</span>
+                {/* Left Column */}
+                <div className="space-y-4">
+                  {/* Customer Info */}
+                  <section className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                      <User className="w-3 h-3" /> Customer
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <p className="font-bold text-gray-900 text-base">{fullName(liveOrder.shippingAddress)}</p>
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <Mail className="w-3.5 h-3.5 text-gray-400" />
+                        <span>{liveOrder.email}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-gray-400 text-xs">×{item.quantity}</span>
-                        <span className="text-gray-600 font-medium">${(item.priceAtPurchase * item.quantity).toFixed(2)}</span>
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <Phone className="w-3.5 h-3.5 text-gray-400" />
+                        <span>{liveOrder.shippingAddress.phone}</span>
                       </div>
                     </div>
-                  ))}
-                  <div className="border-t border-gray-200 pt-2 flex justify-between items-center">
-                    <span className="text-xs text-gray-500">Shipping</span>
-                    <span className="text-xs font-medium text-gray-600">${liveOrder.shippingCost?.toFixed(2) ?? "—"}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-700">Total</span>
-                    <span className="text-base font-black text-gray-900">${liveOrder.totalAmount.toFixed(2)}</span>
-                  </div>
-                </div>
-              </section>
+                  </section>
 
-              {/* Tracking info */}
-              {liveOrder.trackingNumber && (
-                <section className="bg-blue-50 rounded-xl p-4">
-                  <h4 className="text-[11px] font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                    <Truck className="w-3 h-3" /> Tracking
-                  </h4>
-                  <p className="text-xs font-mono text-blue-700">{liveOrder.trackingNumber}</p>
-                  {liveOrder.shippingCarrier && (
-                    <p className="text-[10px] text-blue-500 mt-0.5">{liveOrder.shippingCarrier}</p>
-                  )}
-                  {liveOrder.trackingUrl && (
-                    <a
-                      href={liveOrder.trackingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] font-bold text-blue-600 hover:underline mt-1 block"
-                    >
-                      Track Package →
-                    </a>
-                  )}
-                </section>
-              )}
+                  {/* Shipping Address */}
+                  <section className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                      <MapPin className="w-3 h-3" /> Shipping Address
+                    </h4>
+                    <div className="text-sm text-gray-700 leading-relaxed">
+                      <p>{liveOrder.shippingAddress.street}</p>
+                      {liveOrder.shippingAddress.aptOrSuite && <p>{liveOrder.shippingAddress.aptOrSuite}</p>}
+                      <p>{liveOrder.shippingAddress.city}, {liveOrder.shippingAddress.state} {liveOrder.shippingAddress.zipCode}</p>
+                    </div>
+                  </section>
 
-              {/* Shipping & Payment */}
-              <section className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 rounded-xl p-3.5">
-                  <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 mb-2">
-                    <Truck className="w-3 h-3" /> Shipping
-                  </h4>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusColors[liveOrder.orderStatus] ?? "bg-gray-100 text-gray-600"}`}>
-                    {liveOrder.orderStatus === "pending_payment" ? "Pending" : liveOrder.orderStatus}
-                  </span>
+                  {/* Tracking info */}
+                  {liveOrder.trackingNumber && (
+                    <section className="bg-blue-50 rounded-xl p-4">
+                      <h4 className="text-[11px] font-bold text-blue-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                        <Truck className="w-3 h-3" /> Tracking
+                      </h4>
+                      <p className="text-sm font-mono font-bold text-blue-700">{liveOrder.trackingNumber}</p>
+                      {liveOrder.shippingCarrier && (
+                        <p className="text-xs text-blue-500 mt-1">{liveOrder.shippingCarrier}</p>
+                      )}
+                      {liveOrder.trackingUrl && (
+                        <a
+                          href={liveOrder.trackingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline mt-2"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Track Package
+                        </a>
+                      )}
+                    </section>
+                  )}
+
+                  {/* Order Date */}
+                  <section className="flex items-center gap-3 text-xs text-gray-400">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Ordered {new Date(liveOrder.createdAt).toLocaleString()}</span>
+                  </section>
                 </div>
-                <div className="bg-gray-50 rounded-xl p-3.5">
-                  <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 mb-2">
-                    <CreditCard className="w-3 h-3" /> Payment
-                  </h4>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${paymentColors[liveOrder.paymentStatus]}`}>
-                    {liveOrder.paymentStatus}
-                  </span>
+
+                {/* Right Column */}
+                <div className="space-y-4">
+                  {/* Order Items */}
+                  <section className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                      <Package className="w-3 h-3" /> Items
+                    </h4>
+                    <div className="space-y-3">
+                      {liveOrder.items.map((item, i) => (
+                        <div key={i} className="flex justify-between items-start text-sm bg-white rounded-lg px-3 py-2.5 border border-gray-100">
+                          <div>
+                            <span className="font-semibold text-gray-800 block">{item.name}</span>
+                            <span className="text-gray-400 text-xs">{item.sizeLabel} &times; {item.quantity}</span>
+                          </div>
+                          <span className="font-bold text-gray-700">${(item.priceAtPurchase * item.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* Order Summary */}
+                  <section className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                      <CreditCard className="w-3 h-3" /> Summary
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between text-gray-500">
+                        <span>Subtotal</span>
+                        <span>${liveOrder.totalAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-500">
+                        <span>Shipping</span>
+                        <span>${liveOrder.shippingCost?.toFixed(2) ?? "---"}</span>
+                      </div>
+                      <div className="border-t border-gray-200 pt-2 flex justify-between">
+                        <span className="font-bold text-gray-900">Total</span>
+                        <span className="text-lg font-black text-gray-900">
+                          ${(liveOrder.totalAmount + (liveOrder.shippingCost ?? 0)).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Status Tiles */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gray-50 rounded-xl p-3.5 text-center">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                        <Truck className="w-3 h-3 inline mr-1" />Shipping
+                      </p>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusColors[liveOrder.orderStatus] ?? "bg-gray-100 text-gray-600"}`}>
+                        {liveOrder.orderStatus === "pending_payment" ? "Pending" : liveOrder.orderStatus}
+                      </span>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-3.5 text-center">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                        <CreditCard className="w-3 h-3 inline mr-1" />Payment
+                      </p>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${paymentColors[liveOrder.paymentStatus]}`}>
+                        {liveOrder.paymentStatus}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </section>
+              </div>
             </div>
 
-            {/* Actions Footer */}
-            <div className="px-6 py-4 border-t border-gray-100 bg-white space-y-2">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Update Status</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => patchStatus(liveOrder._id, "processing")}
-                  disabled={liveOrder.orderStatus === "processing" || liveOrder.orderStatus === "delivered" || updateMutation.isPending}
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" /> Processing
-                </button>
-                <button
-                  onClick={() => patchStatus(liveOrder._id, "shipped")}
-                  disabled={
-                    liveOrder.orderStatus === "shipped" ||
-                    liveOrder.orderStatus === "delivered" ||
-                    liveOrder.orderStatus === "cancelled" ||
-                    updateMutation.isPending
-                  }
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Send className="w-3.5 h-3.5" /> Mark Shipped
-                </button>
-                <button
-                  onClick={() => patchStatus(liveOrder._id, "delivered")}
-                  disabled={
-                    liveOrder.orderStatus === "delivered" ||
-                    liveOrder.orderStatus === "cancelled" ||
-                    updateMutation.isPending
-                  }
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-green-50 text-green-700 hover:bg-green-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <CheckCircle className="w-3.5 h-3.5" /> Mark Delivered
-                </button>
-                <button
-                  onClick={() => patchStatus(liveOrder._id, "cancelled")}
-                  disabled={
-                    liveOrder.orderStatus === "cancelled" ||
-                    liveOrder.orderStatus === "delivered" ||
-                    updateMutation.isPending
-                  }
-                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-red-50 text-red-700 hover:bg-red-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <XCircle className="w-3.5 h-3.5" /> Cancel Order
-                </button>
-              </div>
-
-              {/* Send Reminder — for unpaid orders */}
-              {liveOrder.paymentStatus !== "paid" && liveOrder.orderStatus !== "cancelled" && (
-                <button
-                  onClick={() => reminderMutation.mutate(liveOrder._id)}
-                  disabled={reminderMutation.isPending}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 transition disabled:opacity-40 disabled:cursor-not-allowed mt-2"
-                >
-                  <Mail className="w-3.5 h-3.5" />
-                  {reminderMutation.isPending ? "Sending..." : "Send Payment Reminder"}
-                </button>
-              )}
-
-              {updateMutation.isPending && (
-                <p className="text-center text-xs text-gray-400 animate-pulse mt-2">Updating...</p>
+            {/* Modal Footer — Actions */}
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex-shrink-0">
+              {liveOrder.paymentStatus === "paid" ? (
+                <div>
+                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <RefreshCw className="w-3 h-3" /> Actions
+                  </p>
+                  <div className="flex gap-3 flex-wrap">
+                    <button
+                      onClick={() => patchStatus(liveOrder._id, "shipped")}
+                      disabled={liveOrder.orderStatus !== "processing" || updateMutation.isPending}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-blue-500 text-white hover:bg-blue-600 shadow-md hover:shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+                    >
+                      <Truck className="w-4 h-4" /> Mark Shipped
+                    </button>
+                    <button
+                      onClick={() => patchStatus(liveOrder._id, "delivered")}
+                      disabled={liveOrder.orderStatus !== "shipped" || updateMutation.isPending}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-emerald-500 text-white hover:bg-emerald-600 shadow-md hover:shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+                    >
+                      <CheckCircle className="w-4 h-4" /> Mark Delivered
+                    </button>
+                    <button
+                      onClick={() => patchStatus(liveOrder._id, "cancelled")}
+                      disabled={liveOrder.orderStatus !== "processing" || updateMutation.isPending}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+                    >
+                      <XCircle className="w-4 h-4" /> Cancel Order
+                    </button>
+                    {updateMutation.isPending && (
+                      <span className="flex items-center gap-1.5 text-xs text-gray-400 animate-pulse ml-1">
+                        <Clock className="w-3.5 h-3.5" /> Updating...
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xs text-gray-400 font-semibold">
+                    {liveOrder.paymentStatus === "pending" ? "Awaiting payment --- status updates locked" : "Payment failed --- status updates locked"}
+                  </p>
+                  {liveOrder.orderStatus !== "cancelled" && (
+                    <button
+                      onClick={() => reminderMutation.mutate(liveOrder._id)}
+                      disabled={reminderMutation.isPending}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-amber-500 text-white hover:bg-amber-600 shadow-md hover:shadow-lg transition-all disabled:opacity-30"
+                    >
+                      <Bell className="w-4 h-4" />
+                      {reminderMutation.isPending ? "Sending..." : "Send Reminder"}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>

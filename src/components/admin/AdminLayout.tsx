@@ -17,6 +17,7 @@ import {
   Bell,
   Activity,
   ClipboardList,
+  Tag,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ const navItems = [
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/activity", label: "Activity Log", icon: Activity },
+  { href: "/admin/coupons", label: "Coupons", icon: Tag },
   { href: "/admin/emails", label: "Emails", icon: Mail },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
@@ -307,13 +309,6 @@ export function AdminTopbar({ onMenuClick }: { onMenuClick: () => void }) {
           <span className="text-sm font-medium text-gray-700">Admin</span>
         </div>
 
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-red-600 transition px-3 py-1.5 rounded-lg hover:bg-red-50 border border-gray-200 hover:border-red-200"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          Logout
-        </button>
       </div>
     </header>
   );

@@ -86,7 +86,7 @@ export default function DashboardPage() {
         fetch("/api/bulk-orders", { cache: "no-store" }).then((r) => r.json()).catch(() => []),
       ]);
 
-      const orders: BackendOrder[] = ordersRes.data.orders ?? [];
+      const orders: BackendOrder[] = ordersRes.data.data ?? [];
       const products: BackendProduct[] =
         Array.isArray(productsRes.data) ? productsRes.data : (productsRes.data.products ?? []);
 

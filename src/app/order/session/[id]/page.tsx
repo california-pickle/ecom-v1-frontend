@@ -15,6 +15,9 @@ interface SafeOrder {
     priceAtPurchase: number;
   }[];
   totalAmount: number;
+  shippingCost?: number;
+  discountAmount?: number;
+  discountCode?: string | null;
   paymentStatus: "pending" | "paid" | "failed";
   orderStatus: string;
   customerFirstName: string;
@@ -60,8 +63,17 @@ export default function OrderSuccessPage({
   }, [id]);
 
   useEffect(() => {
-    if (order && !loading) {
+    if (order && !loading && order.paymentStatus === "paid") {
       clearCart();
+      // Redeem any coupon that was applied at checkout
+      const pendingCoupon = sessionStorage.getItem("pendingCoupon");
+      if (pendingCoupon) {
+        fetch("/api/coupons/redeem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: pendingCoupon }),
+        }).finally(() => sessionStorage.removeItem("pendingCoupon"));
+      }
     }
   }, [order, loading, clearCart]);
 
@@ -91,7 +103,7 @@ export default function OrderSuccessPage({
   return (
     <>
       <Navbar />
-      <main className="pt-20 sm:pt-32 md:pt-40 min-h-screen bg-white pb-20 px-4">
+      <main className="min-h-screen bg-white pb-20 px-4">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
@@ -150,16 +162,39 @@ export default function OrderSuccessPage({
                 ))}
               </div>
 
-              <div className="border-t-2 border-black mt-8 pt-6 space-y-3">
-                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                  <span className="text-black/40">Subtotal</span>
-                  <span className="text-black">${order.totalAmount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-3xl font-black border-t-2 border-black pt-4 mt-3 uppercase tracking-tighter italic">
-                  <span>Total Paid</span>
-                  <span>${order.totalAmount.toFixed(2)}</span>
-                </div>
-              </div>
+              {(() => {
+                const discount = order.discountAmount ?? 0;
+                const shipping = order.shippingCost ?? 0;
+                // originalSubtotal = net total + discount (reverse the reduction)
+                const originalSubtotal = order.totalAmount + discount;
+                const grandTotal = order.totalAmount + shipping;
+                return (
+                  <div className="border-t-2 border-black mt-8 pt-6 space-y-3">
+                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                      <span className="text-black/40">Subtotal</span>
+                      <span className="text-black">${originalSubtotal.toFixed(2)}</span>
+                    </div>
+                    {discount > 0 && (
+                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                        <span className="text-[#65a30d]">
+                          Discount{order.discountCode ? ` (${order.discountCode})` : ""}
+                        </span>
+                        <span className="text-[#65a30d]">-${discount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {shipping > 0 && (
+                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                        <span className="text-black/40">Shipping</span>
+                        <span className="text-black">${shipping.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-3xl font-black border-t-2 border-black pt-4 mt-3 uppercase tracking-tighter italic">
+                      <span>Total Paid</span>
+                      <span>${grandTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Right Column: Info */}
@@ -170,7 +205,7 @@ export default function OrderSuccessPage({
                   <div className="flex gap-3">
                     <Truck size={18} className="text-black flex-shrink-0" strokeWidth={3} />
                     <p className="text-[10px] font-black text-black uppercase tracking-widest leading-tight">
-                      Ships within 24 hours via your selected carrier.
+                      Your order will be processed and shipped within 1 business day.
                     </p>
                   </div>
                   <div className="flex gap-3">

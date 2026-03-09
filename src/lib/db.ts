@@ -1,9 +1,69 @@
 /**
  * In-memory store for bulk orders, notifications, and activity logs.
  * Orders/customers/products/settings are served from the real backend.
+ * Data is persisted to ./data/db.json on every mutation so restarts don't wipe it.
  */
+import fs from "fs";
+import path from "path";
+
+const DATA_FILE = path.join(process.cwd(), "data", "db.json");
+
+function loadFromDisk(): Record<string, any> | null {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+    }
+  } catch {
+    // Corrupt file — start fresh
+  }
+  return null;
+}
+
+export function persistDb(): void {
+  try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DATA_FILE, JSON.stringify(global.__db, null, 2), "utf8");
+  } catch (err) {
+    console.error("[db] Failed to persist to disk:", err);
+  }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  type: "order_confirmation" | "shipping_update" | "custom";
+  subject: string;
+  /** For pre-designed templates: editable fields only */
+  fields: Record<string, string>;
+  /** For custom template: full body */
+  body: string;
+  locked: boolean; // true = pre-designed, admin can only edit fields
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discountPercent: number;
+  maxUses: number;
+  usedCount: number;
+  expiresAt: string;
+  active: boolean;
+  createdAt: string;
+  note: string; // who it was created for
+}
+
+export interface SentEmail {
+  id: string;
+  to: string;
+  toName: string;
+  subject: string;
+  body: string;
+  couponCode?: string;
+  sentAt: string;
+}
 
 export interface BulkOrder {
   id: string;
@@ -36,6 +96,52 @@ export interface ActivityLog {
   time: string;
 }
 
+// ─── Seed email templates ─────────────────────────────────────────────────────
+
+const seedEmailTemplates: EmailTemplate[] = [
+  {
+    id: "TPL-001",
+    name: "Order Confirmation",
+    type: "order_confirmation",
+    subject: "Your California Pickle order is confirmed!",
+    fields: {
+      greeting: "Thanks for your order! We're prepping your California Pickle juice and will have it out to you soon.",
+      closing: "Stay hydrated and stay pickled.\n\n— The California Pickle Team",
+    },
+    body: "",
+    locked: true,
+  },
+  {
+    id: "TPL-002",
+    name: "Shipping Update",
+    type: "shipping_update",
+    subject: "Your order is on its way!",
+    fields: {
+      message: "Great news — your California Pickle order has shipped! You can track your package using the link below.",
+      closing: "Questions? Reply to this email anytime.\n\n— The California Pickle Team",
+    },
+    body: "",
+    locked: true,
+  },
+  {
+    id: "TPL-003",
+    name: "Custom Email",
+    type: "custom",
+    subject: "",
+    fields: {},
+    body: "",
+    locked: false,
+  },
+];
+
+// ─── Seed coupons ─────────────────────────────────────────────────────────────
+
+const seedCoupons: Coupon[] = [];
+
+// ─── Seed sent emails ─────────────────────────────────────────────────────────
+
+const seedSentEmails: SentEmail[] = [];
+
 // ─── Seed notifications ───────────────────────────────────────────────────────
 
 const seedNotifications: Notification[] = [
@@ -62,21 +168,32 @@ declare global {
         bulkOrders: BulkOrder[];
         notifications: Notification[];
         logs: ActivityLog[];
+        emailTemplates: EmailTemplate[];
+        coupons: Coupon[];
+        sentEmails: SentEmail[];
         bulkCounter: number;
         notifCounter: number;
         logCounter: number;
+        couponCounter: number;
+        sentEmailCounter: number;
       }
     | undefined;
 }
 
 if (!global.__db) {
+  const saved = loadFromDisk();
   global.__db = {
-    bulkOrders: [...seedBulkOrders],
-    notifications: [...seedNotifications],
-    logs: [...seedLogs],
-    bulkCounter: 0,
-    notifCounter: 1,
-    logCounter: 2,
+    bulkOrders:     saved?.bulkOrders     ?? [...seedBulkOrders],
+    notifications:  saved?.notifications  ?? [...seedNotifications],
+    logs:           saved?.logs           ?? [...seedLogs],
+    emailTemplates: saved?.emailTemplates ?? [...seedEmailTemplates],
+    coupons:        saved?.coupons        ?? [...seedCoupons],
+    sentEmails:     saved?.sentEmails     ?? [...seedSentEmails],
+    bulkCounter:        saved?.bulkCounter        ?? 0,
+    notifCounter:       saved?.notifCounter       ?? 1,
+    logCounter:         saved?.logCounter         ?? 2,
+    couponCounter:      saved?.couponCounter      ?? 0,
+    sentEmailCounter:   saved?.sentEmailCounter   ?? 0,
   };
 }
 
@@ -125,4 +242,24 @@ export function addLog(action: string, detail: string): void {
     date: today(),
     time: nowTime(),
   });
+}
+
+/** Generate coupon ID */
+export function generateCouponId(): string {
+  db.couponCounter += 1;
+  return `CPN-${String(db.couponCounter).padStart(3, "0")}`;
+}
+
+/** Generate sent email ID */
+export function generateSentEmailId(): string {
+  db.sentEmailCounter += 1;
+  return `SENT-${String(db.sentEmailCounter).padStart(3, "0")}`;
+}
+
+/** Generate a random coupon code */
+export function generateCouponCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "PICKLE-";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
 }
