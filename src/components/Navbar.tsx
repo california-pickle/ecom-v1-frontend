@@ -81,7 +81,7 @@ export default function Navbar() {
           !mobileOpen && !scrolled && pathname === "/"
             ? {
                 background:
-                  "linear-gradient(to right, rgba(245,249,220,0.55) 0%, rgba(238,235,137,0.5) 33%, rgba(247,229,95,01) 66%, rgba(248,217,81,01) 100%)",
+                  "linear-gradient(to right, #F7FBE4 0%, #F1F5C4 25%, #EDE975 50%, #F6E560 75%, #F9DA55 100%)",
               }
             : undefined
         }
