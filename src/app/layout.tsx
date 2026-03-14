@@ -7,6 +7,7 @@ import { AdminAuthProvider } from "@/lib/admin-auth";
 import { Toaster } from "sonner";
 import Script from "next/script";
 import QueryProvider from "@/providers/QueryProvider";
+import StaleDeploymentBanner from "@/components/StaleDeploymentBanner";
 
 const geist = Geist({
   variable: "--font-geist-sans",
@@ -54,6 +55,7 @@ export default function RootLayout({
               {children}
               <Toaster position="top-right" richColors />
               <VisualEditsMessenger />
+              <StaleDeploymentBanner />
             </CartProvider>
           </AdminAuthProvider>
         </QueryProvider>
