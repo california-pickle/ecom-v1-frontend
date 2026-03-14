@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The California Pickle — Frontend
 
-## Getting Started
+Storefront and admin panel for [thecaliforniapickle.com](https://thecaliforniapickle.com), a direct-to-consumer e-commerce brand selling a performance electrolyte sports drink built for athletes.
 
-First, run the development server:
+## Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Framework**: Next.js 15 (App Router, Server Components, ISR)
+- **Styling**: TailwindCSS (brutalist design — black borders, lime green accents)
+- **State**: TanStack Query (admin), React Context (cart)
+- **HTTP**: Axios with auto token refresh interceptor
+- **Payments**: Stripe Checkout (redirect flow)
+- **Notifications**: Sonner (toasts)
+- **Charts**: Recharts (admin dashboard)
+- **Icons**: Lucide React
+
+## Features
+
+### Storefront
+- Landing page with Hero, Benefits, Ingredients, Size Selection, Comparison sections
+- Product page with ISR (60s revalidation)
+- Cart with persistent state
+- Checkout with live Shippo shipping rates, coupon codes, Stripe redirect
+- Order confirmation page
+- Stale deployment banner — prompts users to reload after a new deploy
+
+### Admin Panel (`/admin`)
+- Dashboard with sales charts and recent activity
+- Orders management with status updates and shipping tracking
+- Products CRUD with image upload, variants, archive/restore
+- Customer management with email sending
+- Bulk order management
+- Email templates (Order Confirmation, Shipping Update, Custom)
+- Coupon generation and management
+- Activity log and settings
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── (storefront)/   # public pages
+│   ├── admin/          # protected admin pages
+│   └── api/            # Next.js API routes (proxy to backend)
+├── components/         # shared UI components
+├── lib/                # axios instance, admin auth, utilities
+└── providers/          # QueryProvider, CartContext
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env` file (dev) or `.env.production` (VPS) with:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+NEXT_PUBLIC_API_URL=
+BACKEND_URL=
+ZEPTOMAIL_API_KEY=
+```
 
-## Learn More
+## Development
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Production Build
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm ci
+npm run build
+npm start
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployed via GitHub Actions on push to `main` — SSHes into VPS, pulls latest, builds, and reloads PM2.
