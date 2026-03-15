@@ -31,8 +31,8 @@ export default function WhyItWorksSection() {
           <div className="relative flex justify-center">
             <div className="absolute inset-0 bg-[#a3e635]/10 rounded-3xl blur-2xl" />
             <Image
-              src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/render/image/public/project-uploads/4ef024bb-072e-480b-91d4-ef3902131183/Gemini_Generated_Image_nd4zttnd4zttnd4z_upscayl_2x_digital-art-4x-resized-1772356018290.webp?width=8000&height=8000&resize=contain"
-              alt="California Pickle bottle"
+              src="/bottleIng.png"
+              alt="California Pickle bottle ingredients"
               width={380}
               height={460}
               className="relative z-10 w-[200px] sm:w-[280px] lg:w-[420px] h-auto object-contain drop-shadow-[0_0_40px_rgba(163,230,53,0.3)]"
