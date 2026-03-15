@@ -105,7 +105,9 @@
 
 .ticker-track {
   display: flex;
+  align-items: center;
   width: max-content;
+  white-space: nowrap;
   animation: ticker 20s linear infinite;
 }
 
