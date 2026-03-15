@@ -29,14 +29,20 @@ export default function WhyItWorksSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
           {/* Image side */}
           <div className="relative flex justify-center">
-            <div className="absolute inset-0 bg-[#a3e635]/10 rounded-3xl blur-2xl" />
-            <Image
-              src="/bottleIng.png"
-              alt="California Pickle bottle ingredients"
-              width={380}
-              height={460}
-              className="relative z-10 w-[200px] sm:w-[280px] lg:w-[420px] h-auto object-contain drop-shadow-[0_0_40px_rgba(163,230,53,0.3)]"
-            />
+            {/* Outer glow */}
+            <div className="absolute inset-0 bg-[#a3e635]/10 rounded-3xl blur-3xl scale-90" />
+            {/* Card container */}
+            <div className="relative rounded-2xl border border-[#a3e635]/20 bg-white/5 backdrop-blur-sm overflow-hidden p-6 shadow-[0_0_60px_rgba(163,230,53,0.08)]">
+              <Image
+                src="/bottleIng.png"
+                alt="California Pickle bottle ingredients"
+                width={500}
+                height={600}
+                className="relative z-10 w-[260px] sm:w-[340px] lg:w-[480px] h-auto object-contain drop-shadow-[0_0_50px_rgba(163,230,53,0.35)]"
+              />
+              {/* Bottom fade blend into section bg */}
+              <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#0a0a0a] to-transparent z-20" />
+            </div>
           </div>
 
           {/* Text side */}
