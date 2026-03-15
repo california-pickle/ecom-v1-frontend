@@ -7,14 +7,14 @@ import hero from "../../../public/hero.jpg";
 import mobilehero from "../../../public/mobilehero.jpg";
 
 const TICKER_ITEMS = [
-  "STOP CRAMPS FAST",
-  "0G SUGAR",
-  "REAL PICKLE BRINE",
   "HIGH ELECTROLYTES",
   "VEGAN & GLUTEN-FREE",
   "NATURAL FORMULA",
   "FAST HYDRATION",
   "PERFORMANCE DRIVEN",
+  "STOP CRAMPS FAST",
+  "0G SUGAR",
+  "REAL PICKLE BRINE",
 ];
 
 function scrollTo(id: string) {
@@ -31,7 +31,7 @@ function scrollTo(id: string) {
 ───────────────────────────────────────────────────────────────────────────── */
 function DesktopHero({ productSlug }: { productSlug: string }) {
   return (
-    <div className="hidden lg:flex relative min-h-[calc(100vh-5rem)] items-center">
+    <div className="hidden lg:flex relative h-[calc(100vh-5rem)] items-center">
       <Image
         src={hero}
         alt="The California Pickle Sports Drink"
@@ -63,29 +63,21 @@ function DesktopHero({ productSlug }: { productSlug: string }) {
           <h1 className="text-5xl md:text-7xl xl:text-8xl font-black text-black leading-[0.85] tracking-tighter mb-8 uppercase">
             Stop&nbsp;Muscle
             <br />
-            <span className="text-[#a3e635] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
-              Cramps
-            </span>
+            <span className="text-[#a3e635] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">Cramps</span>
             <br />
             <span className="whitespace-nowrap">in Seconds</span>
           </h1>
 
           <p className="text-sm text-black font-medium max-w-md leading-tight mb-8 uppercase tracking-tight">
-            Fast-acting electrolyte shot powered by real pickle brine.
-            Science-backed cramp relief that works in under 80 seconds.
+            Fast-acting electrolyte shot powered by real pickle brine. Science-backed cramp relief that works in under
+            80 seconds.
           </p>
 
           <div className="flex gap-4 mb-12">
-            <Link
-              href={`/product/${productSlug}`}
-              className="btn-primary text-center min-w-[200px]"
-            >
+            <Link href={`/product/${productSlug}`} className="btn-primary text-center min-w-[200px]">
               Buy Now
             </Link>
-            <button
-              onClick={() => scrollTo("why-it-works")}
-              className="btn-outline min-w-[200px]"
-            >
+            <button onClick={() => scrollTo("why-it-works")} className="btn-outline min-w-[200px]">
               Learn More
             </button>
           </div>
@@ -101,26 +93,10 @@ function DesktopHero({ productSlug }: { productSlug: string }) {
                 <div className="bg-[#a3e635] rounded-sm border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-2">
                   <Icon size={14} className="text-black" />
                 </div>
-                <span className="text-xs font-black text-black uppercase tracking-widest">
-                  {label}
-                </span>
+                <span className="text-xs font-black text-black uppercase tracking-widest">{label}</span>
               </div>
             ))}
           </div>
-        </div>
-      </div>
-      {/* Ticker — always visible */}
-      <div className=" absolute bottom-0 left-0 bg-black text-white overflow-hidden py-3">
-        <div className="ticker-track">
-          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-3 px-6 text-xs sm:text-sm font-bold tracking-widest whitespace-nowrap"
-            >
-              <span className="text-[#a3e635]">★</span>
-              {item}
-            </span>
-          ))}
         </div>
       </div>
     </div>
@@ -143,7 +119,7 @@ function DesktopHero({ productSlug }: { productSlug: string }) {
 ───────────────────────────────────────────────────────────────────────────── */
 function MobileHero({ productSlug }: { productSlug: string }) {
   return (
-    <div className="lg:hidden relative min-h-[calc(100svh-5rem)] flex flex-col">
+    <div className="lg:hidden relative h-[calc(100svh-5rem)] flex flex-col">
       {/* ── Background image — full viewport, portrait ── */}
       <Image
         src={mobilehero}
@@ -193,8 +169,7 @@ function MobileHero({ productSlug }: { productSlug: string }) {
 
         {/* Description */}
         <p className="text-sm sm:text-base md:text-lg text-white/85 font-medium leading-snug mb-6 sm:mb-8 uppercase tracking-tight max-w-sm">
-          Fast-acting electrolyte shot. Real pickle brine. Works in under
-          80&nbsp;seconds.
+          Fast-acting electrolyte shot. Real pickle brine. Works in under 80&nbsp;seconds.
         </p>
 
         {/* CTAs */}
@@ -226,9 +201,7 @@ function MobileHero({ productSlug }: { productSlug: string }) {
               <div className="bg-white/15 border border-white/40 rounded-sm p-1.5 backdrop-blur-sm">
                 <Icon size={13} className="text-white" />
               </div>
-              <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-widest">
-                {label}
-              </span>
+              <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-widest">{label}</span>
             </div>
           ))}
         </div>
@@ -245,6 +218,20 @@ export default function HeroSection({ productSlug = "california-pickle" }: { pro
     <section id="hero" className="relative overflow-hidden flex flex-col">
       <DesktopHero productSlug={productSlug} />
       <MobileHero productSlug={productSlug} />
+      {/* Ticker — first thing visible after scrolling past hero */}
+      <div className="w-full bg-black text-white overflow-hidden py-3.5 border-t-2 border-white/10">
+        <div className="ticker-track">
+          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-3 px-8 text-xs font-black tracking-[0.2em] uppercase whitespace-nowrap"
+            >
+              <span className="text-[#a3e635] text-base leading-none">★</span>
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

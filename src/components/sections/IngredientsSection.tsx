@@ -36,7 +36,7 @@ const INGREDIENTS = [
 ];
 
 export default function IngredientsSection() {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   return (
     <section
@@ -68,7 +68,7 @@ export default function IngredientsSection() {
               <div
                 key={ing.name}
                 onMouseEnter={() => setActiveIndex(index)}
-                onMouseLeave={() => setActiveIndex(0)}
+                onMouseLeave={() => setActiveIndex(null)}
                 className={`rounded-sm p-7 sm:p-10 border-2 border-black transition-all duration-300 ${
                   isActive
                     ? "bg-[#a3e635] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:scale-105 z-10"
