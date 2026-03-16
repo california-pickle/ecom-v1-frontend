@@ -24,12 +24,7 @@ interface ProductBuySectionProps {
   variants: VariantOption[];
 }
 
-export default function ProductBuySection({
-  productId,
-  productName,
-  badge,
-  variants,
-}: ProductBuySectionProps) {
+export default function ProductBuySection({ productId, productName, badge, variants }: ProductBuySectionProps) {
   const [selectedVariantId, setSelectedVariantId] = useState(variants[0].value);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -57,7 +52,7 @@ export default function ProductBuySection({
         image: currentVariant.images[0] ?? "/bottle.webp",
         sizeLabel: currentVariant.label,
       },
-      quantity
+      quantity,
     );
     toast.success(`Added to cart — ${currentVariant.label}`, {
       action: {
@@ -72,7 +67,7 @@ export default function ProductBuySection({
       {/* Left: sticky image gallery */}
       <div className="lg:sticky lg:top-40">
         {/* Main image */}
-        <div className="product-image-container !max-w-full bg-[#f2f2f2] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <div className="product-image-container !max-w-full bg-[#FFFFFF] border-4 border-black/20 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.08)]">
           {activeImages[activeImageIndex] ? (
             <Image
               src={activeImages[activeImageIndex]}
@@ -83,14 +78,7 @@ export default function ProductBuySection({
               priority
             />
           ) : (
-            <Image
-              src="/bottle.webp"
-              alt={productName}
-              width={560}
-              height={560}
-              className="product-image"
-              priority
-            />
+            <Image src="/bottle.webp" alt={productName} width={560} height={560} className="product-image" priority />
           )}
           <div className="absolute top-4 right-4 bg-[#a3e635] text-black text-[9px] font-black px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] tracking-widest uppercase">
             {badge}
@@ -121,9 +109,7 @@ export default function ProductBuySection({
       <div className="pt-2">
         {/* Price */}
         <div className="flex items-baseline gap-4 mb-8">
-          <span className="text-4xl sm:text-6xl font-black text-black tracking-tighter italic">
-            ${total}
-          </span>
+          <span className="text-4xl sm:text-6xl font-black text-black tracking-tighter italic">${total}</span>
           <span className="text-black/40 font-black text-[10px] uppercase tracking-widest">
             ${currentVariant.price} × {quantity}
           </span>
@@ -131,9 +117,7 @@ export default function ProductBuySection({
 
         {/* Size options */}
         <div className="mb-8">
-          <p className="text-[9px] font-black text-black mb-3 tracking-[0.2em] uppercase">
-            Select Size
-          </p>
+          <p className="text-[9px] font-black text-black mb-3 tracking-[0.2em] uppercase">Select Size</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {variants.map((opt) => (
               <button
@@ -153,9 +137,7 @@ export default function ProductBuySection({
                 <p className="font-black text-black text-[10px] uppercase tracking-tight mb-0.5">
                   {opt.label.split("—")[0]}
                 </p>
-                <p className="font-black text-black text-base tracking-tighter">
-                  ${opt.price}
-                </p>
+                <p className="font-black text-black text-base tracking-tighter">${opt.price}</p>
               </button>
             ))}
           </div>
@@ -163,9 +145,7 @@ export default function ProductBuySection({
 
         {/* Quantity */}
         <div className="mb-10">
-          <p className="text-[9px] font-black text-black mb-3 tracking-[0.2em] uppercase">
-            Quantity
-          </p>
+          <p className="text-[9px] font-black text-black mb-3 tracking-[0.2em] uppercase">Quantity</p>
           <div className="inline-flex items-center border-[3px] border-black rounded-sm overflow-hidden shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
             <button
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -174,9 +154,7 @@ export default function ProductBuySection({
             >
               <Minus size={14} strokeWidth={4} />
             </button>
-            <span className="px-8 py-3 font-black text-xl bg-white min-w-[60px] text-center italic">
-              {quantity}
-            </span>
+            <span className="px-8 py-3 font-black text-xl bg-white min-w-[60px] text-center italic">{quantity}</span>
             <button
               onClick={() => setQuantity((q) => q + 1)}
               className="px-4 py-3 bg-white hover:bg-[#a3e635] transition-colors border-l-[3px] border-black"
@@ -189,10 +167,7 @@ export default function ProductBuySection({
 
         {/* CTA buttons */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <button
-            onClick={handleAddToCart}
-            className="btn-primary flex-1 py-4 text-base"
-          >
+          <button onClick={handleAddToCart} className="btn-primary flex-1 py-4 text-base">
             Add to Cart
           </button>
           <Link
@@ -208,7 +183,7 @@ export default function ProductBuySection({
                   image: currentVariant.images[0] ?? "/bottle.webp",
                   sizeLabel: currentVariant.label,
                 },
-                quantity
+                quantity,
               )
             }
             className="btn-outline flex-1 py-4 text-base text-center"
