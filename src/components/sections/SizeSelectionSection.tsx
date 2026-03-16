@@ -132,25 +132,25 @@ export default function SizeSelectionSection({ product }: Props) {
               )}
 
               {/* Image */}
-              <div className="relative w-full flex items-center justify-center pt-10 px-4 pb-4">
+              <div className="relative w-full flex items-center justify-center pt-8 px-4 pb-2">
                 <Image
                   src={size.image}
                   alt={size.name}
-                  width={280}
-                  height={280}
-                  className="w-full max-w-[260px] h-auto object-contain"
+                  width={220}
+                  height={220}
+                  className="w-full max-w-[210px] h-auto object-contain"
                 />
               </div>
 
               {/* Divider */}
-              <div className={`mx-6 h-[2px] ${size.popular ? "bg-black/15" : "bg-black/6"}`} />
+              <div className={`mx-5 h-[2px] ${size.popular ? "bg-black/15" : "bg-black/6"}`} />
 
               {/* Content */}
-              <div className="p-6 sm:p-8 flex flex-col flex-1">
+              <div className="p-5 flex flex-col flex-1">
 
                 {/* Stock */}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                     size.stock === "In Stock" ? "bg-emerald-500" :
                     size.stock === "Low Stock" ? "bg-amber-500" : "bg-red-400"
                   }`} />
@@ -160,24 +160,24 @@ export default function SizeSelectionSection({ product }: Props) {
                 </div>
 
                 {/* Name */}
-                <h3 className="text-2xl font-black text-black uppercase tracking-tighter italic mb-0.5">
+                <h3 className="text-xl font-black text-black uppercase tracking-tighter italic mb-0.5">
                   {size.name}
                 </h3>
                 <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${size.popular ? "text-black/50" : "text-black/30"}`}>
                   {size.sizeLabel}
                 </p>
                 {size.description && size.description !== size.quantity && (
-                  <p className={`text-xs font-bold uppercase tracking-tight mb-5 ${size.popular ? "text-black/60" : "text-black/40"}`}>
+                  <p className={`text-[11px] font-bold uppercase tracking-tight mb-3 ${size.popular ? "text-black/60" : "text-black/40"}`}>
                     {size.description}
                   </p>
                 )}
 
                 {/* Tags */}
-                <div className="flex flex-wrap gap-1.5 mb-6">
+                <div className="flex flex-wrap gap-1 mb-4">
                   {["0g Sugar", "Real Brine", "Electrolytes", "Vegan"].map((tag) => (
                     <span
                       key={tag}
-                      className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 border-2 rounded-sm ${
+                      className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 border-2 rounded-sm ${
                         size.popular
                           ? "border-black/30 text-black/60"
                           : "border-black/15 text-black/40"
@@ -189,11 +189,11 @@ export default function SizeSelectionSection({ product }: Props) {
                 </div>
 
                 {/* Divider */}
-                <div className={`h-[2px] mb-5 ${size.popular ? "bg-black/15" : "bg-black/6"}`} />
+                <div className={`h-[2px] mb-3 ${size.popular ? "bg-black/15" : "bg-black/6"}`} />
 
                 {/* Price */}
-                <div className="flex items-baseline justify-between mb-6">
-                  <span className="text-5xl font-black text-black tracking-tighter">
+                <div className="flex items-baseline justify-between mb-4">
+                  <span className="text-4xl font-black text-black tracking-tighter">
                     ${size.price}
                   </span>
                   {size.perUnit && (
