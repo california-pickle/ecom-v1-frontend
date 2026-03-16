@@ -29,7 +29,7 @@ export default function ProductPreviewSection({ product }: Props) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           className="rounded-sm overflow-hidden border-4 border-black shadow-[16px_16px_0px_0px_rgba(255,255,255,0.1)]"
-          style={{ background: "linear-gradient(to right, #a3e635 0%, #9DB768 60%, #9DB768 100%)" }}
+          style={{ background: "linear-gradient(to right, #a3e635 0%, #A2B971 60%, #A2B971 100%)" }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
             {/* Text */}
@@ -71,8 +71,10 @@ export default function ProductPreviewSection({ product }: Props) {
             <div className="order-1 lg:order-2 flex items-center justify-center p-6 lg:p-10">
               <div
                 style={{
-                  maskImage: "linear-gradient(to top, transparent 0%, black 1%, black 100%)",
-                  WebkitMaskImage: "linear-gradient(to top, transparent 0%, black 1%, black 100%)",
+                  maskImage: "linear-gradient(to top, transparent 0%, black 1%, black 100%), linear-gradient(to right, transparent 0%, black 1%, black 100%)",
+                  WebkitMaskImage: "linear-gradient(to top, transparent 0%, black 1%, black 100%), linear-gradient(to right, transparent 0%, black 1%, black 100%)",
+                  maskComposite: "intersect",
+                  WebkitMaskComposite: "source-in",
                 }}
               >
                 <Image
