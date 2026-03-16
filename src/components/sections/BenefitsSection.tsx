@@ -37,13 +37,13 @@ const BENEFITS = [
 
 export default function BenefitsSection() {
   return (
-    <section id="benefits" className="bg-white py-16 sm:py-24 lg:py-32">
+    <section id="benefits" className="bg-white py-7 sm:py-16 sm:py-24 lg:py-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <p className="text-black text-xs font-black tracking-[0.3em] uppercase mb-4">
             Performance Benefits
           </p>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-black leading-[0.9] tracking-tighter uppercase">
+          <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-black leading-[0.9] tracking-tighter uppercase">
             Built for Performance.
             <br />
             <span className="text-[#a3e635] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">

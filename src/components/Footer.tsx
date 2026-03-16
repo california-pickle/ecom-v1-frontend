@@ -56,7 +56,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex flex-col items-center text-center">
           {/* Brand */}
-          <div className="mb-10 text-center">
+          <div className=" mb-3 sm:mb-10  mtext-center">
             <Image
               src={logo}
               alt="The California Pickle"
@@ -77,7 +77,7 @@ export default function Footer() {
           </p>
 
           {/* Social Icons */}
-          <div className="flex items-center gap-6 mb-12">
+          <div className="flex items-center gap-6 sm:mb-12">
             <Link
               href="https://www.facebook.com/people/The-California-Pickle/61575237201878/"
               target="_blank"
@@ -94,7 +94,8 @@ export default function Footer() {
               <InstagramIcon />
             </Link>
             <Link
-              href="#"
+              href="https://www.tiktok.com/@thecaliforniapick5?_r=1&_t=ZP-94k4ch2cZdH"
+              target="_blank"
               aria-label="TikTok"
               className="text-white/30 hover:text-[#a3e635] transition-colors"
             >
@@ -102,7 +103,7 @@ export default function Footer() {
             </Link>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between w-full pt-12 border-t border-white/5 gap-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full pt-12 border-t border-white/5 gap-3 sm:gap-8">
             <p className="text-white/20 font-black text-[10px] uppercase tracking-[0.2em]">
               © {new Date().getFullYear()} The California Pickle. Performance
               Protocol.

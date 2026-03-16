@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const CURRENT_BUILD_ID = process.env.NEXT_PUBLIC_BUILD_ID ?? "dev";
-const CHECK_INTERVAL_MS = 60_000;
+const CHECK_INTERVAL_MS = 3000_000;
 
 export default function StaleDeploymentBanner() {
   const [stale, setStale] = useState(false);

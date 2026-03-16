@@ -51,10 +51,10 @@ export default function AdminLoginPage() {
               <Image src={logo} alt="logo" width={40} height={40} />
             </div>
             <span className="text-2xl font-black text-gray-900 tracking-tight">
-              PICKLE
+              The California
             </span>
             <span className="text-2xl font-black text-[#84cc16] tracking-tight">
-              ADMIN
+              PICKLE
             </span>
           </div>
           <p className="text-gray-500 text-sm mt-1">Management Dashboard</p>

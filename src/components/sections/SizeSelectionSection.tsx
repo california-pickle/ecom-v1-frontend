@@ -80,10 +80,13 @@ function buildSizesFromBackend(product: BackendProduct): SizeCard[] {
     image: variant.images?.[0]?.url ?? "/bottle.webp",
     popular: variant.badge === "POPULAR" || index === 1,
     stock:
-      variant.stockStatus === "IN_STOCK" ? "In Stock"
-      : variant.stockStatus === "LOW_STOCK" ? "Low Stock"
-      : variant.stockStatus === "OUT_OF_STOCK" ? "Out of Stock"
-      : "Coming Soon",
+      variant.stockStatus === "IN_STOCK"
+        ? "In Stock"
+        : variant.stockStatus === "LOW_STOCK"
+          ? "Low Stock"
+          : variant.stockStatus === "OUT_OF_STOCK"
+            ? "Out of Stock"
+            : "Coming Soon",
   }));
 }
 
@@ -97,15 +100,14 @@ export default function SizeSelectionSection({ product }: Props) {
       : STATIC_SIZES;
 
   return (
-    <section id="sizes" className="bg-white py-16 sm:py-24 lg:py-32">
+    <section id="sizes" className="bg-white py-7 sm:py-16 sm:py-24 lg:py-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
         {/* Header */}
-        <div className="text-center mb-16 sm:mb-20">
+        <div className="text-center mb-7 sm:mb-16 sm:mb-20">
           <p className="text-black text-xs font-black tracking-[0.3em] uppercase mb-4">
             Available Formats
           </p>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-black leading-[0.9] tracking-tighter uppercase mb-4 sm:mb-6">
+          <h2 className="text-3xl sm:text-5xl md:text-6xl font-black text-black leading-[0.9] tracking-tighter uppercase mb-4 sm:mb-6">
             Choose Your <span className="text-[#a3e635]">Size.</span>
           </h2>
           <p className="text-black font-bold text-lg uppercase tracking-tight opacity-60">
@@ -143,18 +145,26 @@ export default function SizeSelectionSection({ product }: Props) {
               </div>
 
               {/* Divider */}
-              <div className={`mx-5 h-[2px] ${size.popular ? "bg-black/15" : "bg-black/6"}`} />
+              <div
+                className={`mx-5 h-[2px] ${size.popular ? "bg-black/15" : "bg-black/6"}`}
+              />
 
               {/* Content */}
               <div className="p-5 flex flex-col flex-1">
-
                 {/* Stock */}
                 <div className="flex items-center gap-2 mb-2.5">
-                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                    size.stock === "In Stock" ? "bg-emerald-500" :
-                    size.stock === "Low Stock" ? "bg-amber-500" : "bg-red-400"
-                  }`} />
-                  <span className={`text-[9px] font-black uppercase tracking-widest ${size.popular ? "text-black/60" : "text-black/40"}`}>
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                      size.stock === "In Stock"
+                        ? "bg-emerald-500"
+                        : size.stock === "Low Stock"
+                          ? "bg-amber-500"
+                          : "bg-red-400"
+                    }`}
+                  />
+                  <span
+                    className={`text-[9px] font-black uppercase tracking-widest ${size.popular ? "text-black/60" : "text-black/40"}`}
+                  >
                     {size.stock}
                   </span>
                 </div>
@@ -163,33 +173,41 @@ export default function SizeSelectionSection({ product }: Props) {
                 <h3 className="text-xl font-black text-black uppercase tracking-tighter italic mb-0.5">
                   {size.name}
                 </h3>
-                <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${size.popular ? "text-black/50" : "text-black/30"}`}>
+                <p
+                  className={`text-[10px] font-black uppercase tracking-widest mb-1 ${size.popular ? "text-black/50" : "text-black/30"}`}
+                >
                   {size.sizeLabel}
                 </p>
                 {size.description && size.description !== size.quantity && (
-                  <p className={`text-[11px] font-bold uppercase tracking-tight mb-3 ${size.popular ? "text-black/60" : "text-black/40"}`}>
+                  <p
+                    className={`text-[11px] font-bold uppercase tracking-tight mb-3 ${size.popular ? "text-black/60" : "text-black/40"}`}
+                  >
                     {size.description}
                   </p>
                 )}
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1 mb-4">
-                  {["0g Sugar", "Real Brine", "Electrolytes", "Vegan"].map((tag) => (
-                    <span
-                      key={tag}
-                      className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 border-2 rounded-sm ${
-                        size.popular
-                          ? "border-black/30 text-black/60"
-                          : "border-black/15 text-black/40"
-                      }`}
-                    >
-                      {tag}
-                    </span>
-                  ))}
+                  {["0g Sugar", "Real Brine", "Electrolytes", "Vegan"].map(
+                    (tag) => (
+                      <span
+                        key={tag}
+                        className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 border-2 rounded-sm ${
+                          size.popular
+                            ? "border-black/30 text-black/60"
+                            : "border-black/15 text-black/40"
+                        }`}
+                      >
+                        {tag}
+                      </span>
+                    ),
+                  )}
                 </div>
 
                 {/* Divider */}
-                <div className={`h-[2px] mb-3 ${size.popular ? "bg-black/15" : "bg-black/6"}`} />
+                <div
+                  className={`h-[2px] mb-3 ${size.popular ? "bg-black/15" : "bg-black/6"}`}
+                />
 
                 {/* Price */}
                 <div className="flex items-baseline justify-between mb-4">
@@ -197,7 +215,9 @@ export default function SizeSelectionSection({ product }: Props) {
                     ${size.price}
                   </span>
                   {size.perUnit && (
-                    <span className={`text-[9px] font-black uppercase tracking-widest ${size.popular ? "text-black/40" : "text-black/25"}`}>
+                    <span
+                      className={`text-[9px] font-black uppercase tracking-widest ${size.popular ? "text-black/40" : "text-black/25"}`}
+                    >
                       {size.perUnit}
                     </span>
                   )}
