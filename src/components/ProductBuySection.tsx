@@ -196,7 +196,7 @@ export default function ProductBuySection({ productId, productName, badge, varia
         <div className="flex flex-wrap items-center gap-6 text-[9px] font-black uppercase tracking-widest text-black/60 mb-10">
           <span className="flex items-center gap-2">
             <Truck size={12} className="text-[#a3e635]" strokeWidth={3} />
-            Ships within 24 hours
+            Real-time tracked shipping
           </span>
           <span className="flex items-center gap-2">
             <Clock size={12} className="text-[#a3e635]" strokeWidth={3} />
