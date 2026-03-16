@@ -179,7 +179,7 @@ export default function ProductsPage() {
   };
 
   // ─── Image Upload ─────────────────────────────────────────
-  // CHANGE 2b — multi-file upload with 5-image cap
+  // CHANGE 2b — multi-file upload with 7-image cap
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length || !uploadTarget) return;
 
@@ -188,9 +188,9 @@ export default function ProductsPage() {
       ? createForm.variants[uploadTarget.variantIndex].images
       : editForm?.variants[uploadTarget.variantIndex]?.images ?? [];
 
-    const remaining = 5 - currentImages.length;
+    const remaining = 7 - currentImages.length;
     if (remaining <= 0) {
-      toast.error("Maximum 5 images per variant");
+      toast.error("Maximum 7 images per variant");
       if (fileInputRef.current) fileInputRef.current.value = "";
       setUploadTarget(null);
       return;
@@ -524,7 +524,7 @@ export default function ProductsPage() {
             </button>
           </div>
         ))}
-        {images.length < 5 && (
+        {images.length < 7 && (
           <button
             onClick={() => triggerUpload(mode, variantIndex)}
             disabled={uploading[key]}
@@ -535,7 +535,7 @@ export default function ProductsPage() {
             ) : (
               <>
                 <Upload className="w-3.5 h-3.5" />
-                <span className="text-[9px] font-bold">{5 - images.length} left</span>
+                <span className="text-[9px] font-bold">{7 - images.length} left</span>
               </>
             )}
           </button>
