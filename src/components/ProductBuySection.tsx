@@ -72,7 +72,7 @@ export default function ProductBuySection({
       {/* Left: sticky image gallery */}
       <div className="lg:sticky lg:top-40">
         {/* Main image */}
-        <div className="product-image-container !max-w-full bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <div className="product-image-container !max-w-full bg-[#f2f2f2] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
           {activeImages[activeImageIndex] ? (
             <Image
               src={activeImages[activeImageIndex]}
