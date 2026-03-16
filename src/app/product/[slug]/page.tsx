@@ -12,7 +12,7 @@ import type { BackendProduct } from "@/app/page";
 // ─── ISR — pre-render all slugs at build time, revalidate every 60 seconds ───
 export const revalidate = 60;
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:4200/api";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000/api";
 
 async function fetchStorefrontProduct(): Promise<BackendProduct | null> {
   try {

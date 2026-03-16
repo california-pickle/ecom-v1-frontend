@@ -35,7 +35,7 @@ export default function ProductActions({ productId, sizeOptions }: ProductAction
         image: "/bottle.webp",
         sizeLabel: currentOption.label,
       },
-      quantity
+      quantity,
     );
     toast.success(`Added to cart — ${currentOption.label}`, {
       action: {
@@ -49,19 +49,14 @@ export default function ProductActions({ productId, sizeOptions }: ProductAction
     <>
       {/* Price */}
       <div className="flex items-baseline gap-4 mb-8">
-        <span className="text-4xl sm:text-6xl font-black text-black tracking-tighter italic">
-          ${total}
-        </span>
+        <span className="text-4xl sm:text-6xl font-black text-black tracking-tighter italic">${total}</span>
         <span className="text-black/40 font-black text-[10px] uppercase tracking-widest">
           ${currentOption.price} × {quantity}
         </span>
       </div>
-
       {/* Size options */}
       <div className="mb-8">
-        <p className="text-[9px] font-black text-black mb-3 tracking-[0.2em] uppercase">
-          Select Size
-        </p>
+        <p className="text-[9px] font-black text-black mb-3 tracking-[0.2em] uppercase">Select Size</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {sizeOptions.map((opt) => (
             <button
@@ -81,19 +76,14 @@ export default function ProductActions({ productId, sizeOptions }: ProductAction
               <p className="font-black text-black text-[10px] uppercase tracking-tight mb-0.5">
                 {opt.label.split("—")[0]}
               </p>
-              <p className="font-black text-black text-base tracking-tighter">
-                ${opt.price}
-              </p>
+              <p className="font-black text-black text-base tracking-tighter">${opt.price}</p>
             </button>
           ))}
         </div>
       </div>
-
       {/* Quantity */}
       <div className="mb-10">
-        <p className="text-[9px] font-black text-black mb-3 tracking-[0.2em] uppercase">
-          Quantity
-        </p>
+        <p className="text-[9px] font-black text-black mb-3 tracking-[0.2em] uppercase">Quantity</p>
         <div className="inline-flex items-center border-[3px] border-black rounded-sm overflow-hidden shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
           <button
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -102,9 +92,7 @@ export default function ProductActions({ productId, sizeOptions }: ProductAction
           >
             <Minus size={14} strokeWidth={4} />
           </button>
-          <span className="px-8 py-3 font-black text-xl bg-white min-w-[60px] text-center italic">
-            {quantity}
-          </span>
+          <span className="px-8 py-3 font-black text-xl bg-white min-w-[60px] text-center italic">{quantity}</span>
           <button
             onClick={() => setQuantity((q) => q + 1)}
             className="px-4 py-3 bg-white hover:bg-[#a3e635] transition-colors border-l-[3px] border-black"
@@ -114,7 +102,6 @@ export default function ProductActions({ productId, sizeOptions }: ProductAction
           </button>
         </div>
       </div>
-
       {/* CTA buttons */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <button onClick={handleAddToCart} className="btn-primary flex-1 py-4 text-base">
@@ -133,7 +120,7 @@ export default function ProductActions({ productId, sizeOptions }: ProductAction
                 image: "/bottle.webp",
                 sizeLabel: currentOption.label,
               },
-              quantity
+              quantity,
             )
           }
           className="btn-outline flex-1 py-4 text-base text-center"
@@ -141,7 +128,6 @@ export default function ProductActions({ productId, sizeOptions }: ProductAction
           Buy Now
         </Link>
       </div>
-
       {/* Shipping note */}
       <div className="flex flex-wrap items-center gap-6 text-[9px] font-black uppercase tracking-widest text-black/60 mb-10">
         <span className="flex items-center gap-2">

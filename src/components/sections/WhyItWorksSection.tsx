@@ -30,7 +30,7 @@ export default function WhyItWorksSection() {
             <div className="absolute inset-0 bg-[#a3e635]/10 rounded-3xl blur-3xl" />
             <div className="relative z-10 border-2 border-[#a3e635]/40 rounded-2xl overflow-hidden shadow-[8px_8px_0px_0px_rgba(163,230,53,0.2)] p-5 bg-white/5 w-full">
               <Image
-                src="/bottleIng.png"
+                src="/bottleIng.jpg"
                 alt="California Pickle bottle"
                 width={700}
                 height={840}
