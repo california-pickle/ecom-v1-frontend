@@ -67,7 +67,7 @@ export default function ProductBuySection({ productId, productName, badge, varia
       {/* Left: sticky image gallery */}
       <div className="lg:sticky lg:top-40">
         {/* Main image */}
-        <div className="product-image-container !max-w-full bg-[#FFFFFF] border-4 border-black/20 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.08)]">
+        <div className="product-image-container !max-w-full bg-[#FFFFFF] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
           {activeImages[activeImageIndex] ? (
             <Image
               src={activeImages[activeImageIndex]}
