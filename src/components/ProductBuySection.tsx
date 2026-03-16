@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -24,7 +24,7 @@ interface ProductBuySectionProps {
   variants: VariantOption[];
 }
 
-export default function ProductBuySection({ productId, productName, badge, variants }: ProductBuySectionProps) {
+function ProductBuySectionInner({ productId, productName, badge, variants }: ProductBuySectionProps) {
   const searchParams = useSearchParams();
   const preselect = searchParams.get("variant");
   const initialVariant = variants.find((v) => v.variantId === preselect)?.value ?? variants[0].value;
@@ -208,5 +208,13 @@ export default function ProductBuySection({ productId, productName, badge, varia
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProductBuySection(props: ProductBuySectionProps) {
+  return (
+    <Suspense fallback={null}>
+      <ProductBuySectionInner {...props} />
+    </Suspense>
   );
 }
