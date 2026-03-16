@@ -15,6 +15,7 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://thecaliforniapickle.com"),
   title: "The California Pickle | Sports Drink",
   description:
     "Stop muscle cramps in seconds. Fast-acting electrolyte shot powered by real pickle brine. 0g Sugar. Natural ingredients.",

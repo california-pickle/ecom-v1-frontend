@@ -32,6 +32,11 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+    },
+  },
   turbopack: {
     rules: {
       "*.{jsx,tsx}": {
