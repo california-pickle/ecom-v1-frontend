@@ -10,7 +10,7 @@ import Footer from "@/components/Footer";
 
 export const revalidate = 60;
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:4200/api";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000/api";
 
 // BackendProduct mirrors the shape returned by GET /products/storefront
 export interface BackendVariant {
