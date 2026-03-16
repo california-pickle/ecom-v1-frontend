@@ -55,20 +55,24 @@ export default function Footer() {
 
           {/* Social Icons */}
           <div className="flex items-center gap-6 mb-12">
-            <Link
-              href="#"
+            <a
+              href="https://www.facebook.com/share/1At5j9AjcE/?mibextid=wwXIfr"
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label="Facebook"
               className="text-white/30 hover:text-[#a3e635] transition-colors"
             >
               <FacebookIcon />
-            </Link>
-            <Link
-              href="#"
+            </a>
+            <a
+              href="https://www.instagram.com/thecaliforniapickle?igsh=MTBqcXBvd2k1ZXRvcg=="
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label="Instagram"
               className="text-white/30 hover:text-[#a3e635] transition-colors"
             >
               <InstagramIcon />
-            </Link>
+            </a>
             <Link
               href="#"
               aria-label="TikTok"
