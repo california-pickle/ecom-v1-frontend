@@ -910,7 +910,7 @@ export default function ProductsPage() {
                     </div>
                     {/* CHANGE 3c — Image section with error highlight */}
                     <div>
-                      <label className="block text-[10px] font-medium text-gray-500 mb-1.5">Images * (1-5)</label>
+                      <label className="block text-[10px] font-medium text-gray-500 mb-1.5">Images * (1-7)</label>
                       {createFieldErrors[`v${idx}_images`] ? (
                         <div className="rounded-lg ring-2 ring-red-400 p-1 inline-flex">
                           <ImageThumbs images={variant.images} mode="create" variantIndex={idx} />
@@ -1073,7 +1073,7 @@ export default function ProductsPage() {
 
                     {/* Images */}
                     <div>
-                      <label className="block text-[10px] font-medium text-gray-500 mb-1.5">Images (1-5)</label>
+                      <label className="block text-[10px] font-medium text-gray-500 mb-1.5">Images (1-7)</label>
                       <ImageThumbs images={variant.images} mode="edit" variantIndex={idx} />
                     </div>
                   </div>
