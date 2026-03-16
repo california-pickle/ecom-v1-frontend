@@ -222,7 +222,7 @@ export default function SizeSelectionSection({ product }: Props) {
                     Add to Cart
                   </button>
                   <Link
-                    href={`/product/${product?.slug ?? "california-pickle"}`}
+                    href={`/product/${product?.slug ?? "california-pickle"}?variant=${size.variantId}`}
                     className="btn-outline text-center py-3 text-xs"
                   >
                     View Details

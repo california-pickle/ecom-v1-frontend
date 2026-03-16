@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Minus, Plus, Truck, Clock } from "lucide-react";
 import { useCart } from "@/components/CartContext";
 import { toast } from "sonner";
@@ -25,7 +25,10 @@ interface ProductBuySectionProps {
 }
 
 export default function ProductBuySection({ productId, productName, badge, variants }: ProductBuySectionProps) {
-  const [selectedVariantId, setSelectedVariantId] = useState(variants[0].value);
+  const searchParams = useSearchParams();
+  const preselect = searchParams.get("variant");
+  const initialVariant = variants.find((v) => v.variantId === preselect)?.value ?? variants[0].value;
+  const [selectedVariantId, setSelectedVariantId] = useState(initialVariant);
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
