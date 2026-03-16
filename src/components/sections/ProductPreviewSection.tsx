@@ -29,7 +29,7 @@ export default function ProductPreviewSection({ product }: Props) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           className="rounded-sm overflow-hidden border-4 border-black shadow-[16px_16px_0px_0px_rgba(255,255,255,0.1)]"
-          style={{ background: "linear-gradient(to right, #a3e635 0%, #A2B971 55%, #A2B971 100%)" }}
+          style={{ background: "linear-gradient(to right, #a3e635 0%, #A2B971 50%, #A2B971 100%)" }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
             {/* Text */}
