@@ -2,13 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check } from "lucide-react";
 import { useCart } from "../CartContext";
 import type { BackendProduct } from "@/app/page";
 
 const STATIC_PRODUCT_ID = "69aab28f68caaa864f09c826";
-
-const PERKS = ["0g Sugar", "Real Pickle Brine", "High Electrolytes", "Vegan & Gluten-Free"];
 
 const STATIC_SIZES = [
   {
@@ -135,13 +132,13 @@ export default function SizeSelectionSection({ product }: Props) {
               )}
 
               {/* Image */}
-              <div className="relative w-full flex items-center justify-center pt-10 px-6 pb-4">
+              <div className="relative w-full flex items-center justify-center pt-10 px-4 pb-4">
                 <Image
                   src={size.image}
                   alt={size.name}
-                  width={220}
-                  height={220}
-                  className="w-full max-w-[200px] h-auto object-contain"
+                  width={280}
+                  height={280}
+                  className="w-full max-w-[260px] h-auto object-contain"
                 />
               </div>
 
@@ -175,23 +172,21 @@ export default function SizeSelectionSection({ product }: Props) {
                   </p>
                 )}
 
-                {/* Perks */}
-                <ul className="space-y-2 mb-6">
-                  {PERKS.map((perk) => (
-                    <li key={perk} className="flex items-center gap-2.5">
-                      <span className={`w-4 h-4 border-2 rounded-sm flex items-center justify-center flex-shrink-0 ${
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1.5 mb-6">
+                  {["0g Sugar", "Real Brine", "Electrolytes", "Vegan"].map((tag) => (
+                    <span
+                      key={tag}
+                      className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 border-2 rounded-sm ${
                         size.popular
-                          ? "bg-black border-black"
-                          : "bg-[#a3e635] border-black"
-                      }`}>
-                        <Check size={8} className={size.popular ? "text-[#a3e635]" : "text-black"} strokeWidth={4} />
-                      </span>
-                      <span className={`text-[11px] font-black uppercase tracking-wide ${size.popular ? "text-black/70" : "text-black/50"}`}>
-                        {perk}
-                      </span>
-                    </li>
+                          ? "border-black/30 text-black/60"
+                          : "border-black/15 text-black/40"
+                      }`}
+                    >
+                      {tag}
+                    </span>
                   ))}
-                </ul>
+                </div>
 
                 {/* Divider */}
                 <div className={`h-[2px] mb-5 ${size.popular ? "bg-black/15" : "bg-black/6"}`} />
