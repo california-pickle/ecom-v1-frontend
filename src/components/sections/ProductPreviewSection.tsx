@@ -25,11 +25,11 @@ export default function ProductPreviewSection({ product }: Props) {
   const nameLast = nameParts[nameParts.length - 1];
 
   return (
-    <section id="product-preview" className="bg-[#A2B971] py-16 sm:py-24 lg:py-32">
+    <section id="product-preview" className="bg-[#0a0a0a] py-16 sm:py-24 lg:py-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
-          className="rounded-sm overflow-hidden border-4 border-black shadow-[16px_16px_0px_0px_rgba(0,0,0,0.25)]"
-          style={{ background: "#0a0a0a" }}
+          className="rounded-sm overflow-hidden border-4 border-black shadow-[16px_16px_0px_0px_rgba(255,255,255,0.1)]"
+          style={{ background: "#A2B971" }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
             {/* Text */}
@@ -37,31 +37,31 @@ export default function ProductPreviewSection({ product }: Props) {
               {/* Stars */}
               <div className="flex gap-1 mb-6">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={18} className="fill-[#A2B971] text-[#A2B971]" />
+                  <Star key={i} size={18} className="fill-black text-black" />
                 ))}
-                <span className="text-xs font-black text-[#A2B971] ml-3 uppercase tracking-widest italic">
+                <span className="text-xs font-black text-black ml-3 uppercase tracking-widest italic">
                   5.0 / 5.0 Rating
                 </span>
               </div>
 
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-white leading-[0.85] tracking-tighter mb-6 sm:mb-8 uppercase">
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-black leading-[0.85] tracking-tighter mb-6 sm:mb-8 uppercase">
                 {nameStart}
                 <br />
-                <span className="text-[#A2B971]">{nameLast}.</span>
+                {nameLast}.
               </h2>
-              <p className="text-white/70 font-bold text-lg leading-tight mb-8 uppercase tracking-tight">
+              <p className="text-black font-bold text-lg leading-tight mb-8 uppercase tracking-tight">
                 {productDescription}
               </p>
               <div className="flex items-baseline gap-3 mb-8 sm:mb-10">
-                <span className="text-5xl sm:text-7xl font-black text-[#A2B971] tracking-tighter">${startingPrice}</span>
-                <span className="text-white/50 font-black text-xs uppercase tracking-widest">{priceSubLabel}</span>
+                <span className="text-5xl sm:text-7xl font-black text-black tracking-tighter">${startingPrice}</span>
+                <span className="text-[#4a5e2a] font-black text-xs uppercase tracking-widest">{priceSubLabel}</span>
               </div>
 
               <div className="flex flex-wrap gap-4">
-                <Link href={`/product/${productSlug}`} className="btn-primary px-10">
+                <Link href={`/product/${productSlug}`} className="btn-secondary px-10">
                   Buy Now
                 </Link>
-                <Link href="#sizes" className="btn-outline px-10 border-[#A2B971] text-[#A2B971] hover:bg-[#A2B971] hover:text-black">
+                <Link href="#sizes" className="btn-outline px-10 border-black/40 text-black/70 hover:bg-black/10">
                   View All Sizes
                 </Link>
               </div>
