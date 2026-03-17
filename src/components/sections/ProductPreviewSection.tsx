@@ -16,7 +16,7 @@ export default function ProductPreviewSection({ product }: Props) {
   const startingPrice = firstVariant?.price ?? 22;
   const priceSubLabel = firstVariant?.sizeLabel ?? "Pack of 12 · 60ml each";
 
-  // Build slug for the product detail link
+  // Build slug for the product detail link -
   const productSlug = product?.slug ?? "california-pickle";
 
   // Split name for two-line heading (last word accented)
