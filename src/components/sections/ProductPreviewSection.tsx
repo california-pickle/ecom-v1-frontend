@@ -71,8 +71,8 @@ export default function ProductPreviewSection({ product }: Props) {
             <div className="order-1 lg:order-2 flex items-center justify-center p-6 lg:p-10">
               <div
                 style={{
-                  maskImage: "linear-gradient(to top, transparent 0%, black 1%, black 100%)",
-                  WebkitMaskImage: "linear-gradient(to top, transparent 0%, black 1%, black 100%)",
+                  maskImage: "linear-gradient(to top, transparent 0%, black 0.5%, black 100%)",
+                  WebkitMaskImage: "linear-gradient(to top, transparent 0%, black 0.5%, black 100%)",
                 }}
               >
                 <Image

@@ -88,7 +88,7 @@ export default function Footer() {
               Protocol.
             </p>
             <div className="flex gap-10 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-              <Link href="#" className="hover:text-white transition-colors">
+              <Link href="/privacy-policy" className="hover:text-white transition-colors">
                 Privacy Policy
               </Link>
               <Link href="#" className="hover:text-white transition-colors">
