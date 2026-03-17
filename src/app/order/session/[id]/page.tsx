@@ -72,7 +72,12 @@ export default function OrderSuccessPage({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code: pendingCoupon }),
-        }).finally(() => sessionStorage.removeItem("pendingCoupon"));
+        }).then((res) => {
+          if (res.ok) sessionStorage.removeItem("pendingCoupon");
+          // On failure: keep in sessionStorage so next page load retries
+        }).catch(() => {
+          // Network error: keep in sessionStorage for retry
+        });
       }
     }
   }, [order, loading, clearCart]);
@@ -111,7 +116,7 @@ export default function OrderSuccessPage({
               <ShieldCheck size={36} className="text-black" />
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-black mb-2 uppercase tracking-tighter italic">
-              Deployment{" "}
+              Order{" "}
               <span className="text-[#a3e635] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">Confirmed!</span>
             </h1>
 

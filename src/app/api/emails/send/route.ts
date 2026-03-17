@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.ZEPTOMAIL_API_KEY;
 
     if (apiKey) {
+      let sendOk = false;
       try {
         const zepto = await fetch("https://api.zeptomail.com/v1.1/email", {
           method: "POST",
@@ -60,12 +61,19 @@ export async function POST(req: NextRequest) {
           }),
         });
 
-        if (!zepto.ok) {
+        if (zepto.ok) {
+          sendOk = true;
+        } else {
           const errorText = await zepto.text();
           console.error(`ZeptoMail API error (${zepto.status}): ${errorText}`);
+          return NextResponse.json({ error: "Failed to send email" }, { status: 502 });
         }
       } catch (sendError) {
         console.error("ZeptoMail fetch failed:", sendError);
+        return NextResponse.json({ error: "Failed to send email" }, { status: 502 });
+      }
+      if (!sendOk) {
+        return NextResponse.json({ error: "Failed to send email" }, { status: 502 });
       }
     }
 
