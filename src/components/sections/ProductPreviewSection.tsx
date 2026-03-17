@@ -49,7 +49,7 @@ export default function ProductPreviewSection({ product }: Props) {
                 <br />
                 {nameLast}.
               </h2>
-              <p className="text-black font-bold text-lg leading-tight mb-8 uppercase tracking-tight">
+              <p className="text-black/70 font-bold text-lg leading-tight mb-8 uppercase tracking-tight">
                 {productDescription}
               </p>
               <div className="flex items-baseline gap-3 mb-8 sm:mb-10">
@@ -58,10 +58,16 @@ export default function ProductPreviewSection({ product }: Props) {
               </div>
 
               <div className="flex flex-wrap gap-4">
-                <Link href={`/product/${productSlug}`} className="btn-secondary px-10">
+                <Link
+                  href={`/product/${productSlug}`}
+                  className="inline-flex items-center justify-center bg-black text-white font-black uppercase tracking-widest px-10 py-4 border-4 border-black hover:bg-[#0a0a0a]/90 transition-all duration-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                >
                   Buy Now
                 </Link>
-                <Link href="#sizes" className="btn-outline px-10 border-black/40 text-black/70 hover:bg-black/10">
+                <Link
+                  href="#sizes"
+                  className="inline-flex items-center justify-center bg-transparent text-black font-black uppercase tracking-widest px-10 py-4 border-4 border-black hover:bg-black hover:text-[#A2B971] transition-all duration-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                >
                   View All Sizes
                 </Link>
               </div>
