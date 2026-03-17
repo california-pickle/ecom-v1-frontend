@@ -33,7 +33,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <p className="mt-3">
                 For privacy-related inquiries, contact us at:{" "}
-                <span className="font-black">hello@thecaliforniapickle.com</span>
+                <span className="font-black">support@thecaliforniapickle.com</span>
               </p>
             </section>
 
@@ -128,7 +128,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <p className="mt-3">
                 To exercise any of these rights, email us at{" "}
-                <span className="font-black">hello@thecaliforniapickle.com</span> with the subject line
+                <span className="font-black">support@thecaliforniapickle.com</span> with the subject line
                 "Privacy Request." We will respond within 45 days.
               </p>
             </section>
@@ -169,7 +169,7 @@ export default function PrivacyPolicyPage() {
                 <p className="font-black text-black uppercase tracking-widest text-xs">The California Pickle LLC</p>
                 <p className="text-xs mt-1">1999 Harrison Street, Suite 1800</p>
                 <p className="text-xs">Oakland, CA 94612</p>
-                <p className="text-xs mt-1 font-black">hello@thecaliforniapickle.com</p>
+                <p className="text-xs mt-1 font-black">support@thecaliforniapickle.com</p>
               </div>
             </section>
 

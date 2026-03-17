@@ -49,9 +49,15 @@ export default function Footer() {
           </div>
 
           {/* Address */}
-          <p className="text-white/40 text-xs font-black uppercase tracking-widest mb-8">
+          <p className="text-white/40 text-xs font-black uppercase tracking-widest mb-3">
             The California Pickle LLC &nbsp;·&nbsp; 1999 Harrison Street Suite 1800 &nbsp;·&nbsp; Oakland CA 94612
           </p>
+          <a
+            href="mailto:support@thecaliforniapickle.com"
+            className="text-white/40 hover:text-[#a3e635] text-xs font-black uppercase tracking-widest mb-8 transition-colors"
+          >
+            support@thecaliforniapickle.com
+          </a>
 
           {/* Social Icons */}
           <div className="flex items-center gap-6 mb-12">

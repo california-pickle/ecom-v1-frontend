@@ -700,7 +700,7 @@ export default function CheckoutPage() {
                   </p>
                   <p className="text-[10px] font-bold leading-relaxed text-white/80">
                     <span className="text-white font-black">ALL SALES ARE FINAL.</span> Due to the perishable and consumable nature of our food &amp; beverage products, we do not accept returns or issue refunds once an order has been placed. By completing this purchase, you acknowledge and agree to this no-return, no-refund policy. If your order arrives damaged, please contact us within 48 hours with photos at{" "}
-                    <span className="text-[#a3e635]">support@californiapickle.com</span>
+                    <span className="text-[#a3e635]">support@thecaliforniapickle.com</span>
                   </p>
                 </div>
 
