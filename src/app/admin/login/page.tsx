@@ -50,12 +50,8 @@ export default function AdminLoginPage() {
             <div className="w-10 h-10 rounded-lg flex items-center justify-center">
               <img src="/logo.webp" alt="logo" width={40} height={40} />
             </div>
-            <span className="text-2xl font-black text-gray-900 tracking-tight">
-              The California
-            </span>
-            <span className="text-2xl font-black text-[#84cc16] tracking-tight">
-              PICKLE
-            </span>
+            <span className="text-2xl font-black text-gray-900 tracking-tight">The California</span>
+            <span className="text-2xl font-black text-[#84cc16] tracking-tight">PICKLE</span>
           </div>
           <p className="text-gray-500 text-sm mt-1">Management Dashboard</p>
         </div>
@@ -63,16 +59,12 @@ export default function AdminLoginPage() {
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           <h1 className="text-xl font-bold text-gray-900 mb-1">Sign in</h1>
-          <p className="text-gray-500 text-sm mb-6">
-            Enter your admin email to continue
-          </p>
+          <p className="text-gray-500 text-sm mb-6">Enter your admin email to continue</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Input */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Admin Email
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Admin Email</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -88,9 +80,7 @@ export default function AdminLoginPage() {
 
             {/* Password Input */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -106,11 +96,7 @@ export default function AdminLoginPage() {
                   onClick={() => setShowPass(!showPass)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
                 >
-                  {showPass ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
@@ -118,8 +104,7 @@ export default function AdminLoginPage() {
             {/* Asol Backend theke asha Error Message */}
             {isError && (
               <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3 font-medium">
-                {(error as any)?.response?.data?.message ||
-                  "Invalid credentials. Please try again."}
+                {(error as any)?.response?.data?.message || "Invalid credentials. Please try again."}
               </div>
             )}
 
@@ -146,3 +131,4 @@ export default function AdminLoginPage() {
     </div>
   );
 }
+// -----
