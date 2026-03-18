@@ -16,10 +16,15 @@ const geist = Geist({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thecaliforniapickle.com"),
-  title: "The California Pickle | Sports Drink",
+  title: {
+    default: "The California Pickle | Sports Drink — Stop Cramps in Seconds",
+    template: "%s | The California Pickle",
+  },
   description:
-    "Stop muscle cramps in seconds. Fast-acting electrolyte shot powered by real pickle brine. 0g Sugar. Natural ingredients.",
-  // Comprehensive Icon Setup
+    "Stop muscle cramps in seconds. Fast-acting electrolyte shot powered by real pickle brine. 0g Sugar. Science-backed cramp relief in under 80 seconds. Vegan, gluten-free.",
+  keywords: ["pickle juice", "sports drink", "electrolytes", "cramp relief", "muscle cramps", "hydration", "workout drink"],
+  authors: [{ name: "The California Pickle" }],
+  creator: "The California Pickle",
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -30,8 +35,24 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   openGraph: {
-    title: "The California Pickle Sports Drink",
-    description: "Fast-acting electrolyte shot powered by real pickle brine.",
+    type: "website",
+    siteName: "The California Pickle",
+    title: "The California Pickle — Stop Cramps in Seconds",
+    description: "Fast-acting electrolyte shot powered by real pickle brine. 0g Sugar, vegan, science-backed.",
+    url: "https://thecaliforniapickle.com",
+    images: [
+      {
+        url: "/bottle.webp",
+        width: 1200,
+        height: 630,
+        alt: "The California Pickle Sports Drink — Pickle Juice Electrolyte Shot",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The California Pickle — Stop Cramps in Seconds",
+    description: "Fast-acting electrolyte shot powered by real pickle brine. 0g Sugar, science-backed cramp relief.",
     images: ["/bottle.webp"],
   },
 };

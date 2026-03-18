@@ -55,24 +55,38 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const staticProduct = getProductBySlug(slug);
-  if (staticProduct) {
-    return {
-      title: staticProduct.seoTitle,
-      description: staticProduct.seoDescription,
-    };
-  }
-  // Try backend for a non-static slug
   const backendProduct = await fetchStorefrontProduct();
-  if (
-    backendProduct &&
-    (backendProduct.slug === slug || !backendProduct.slug)
-  ) {
-    return {
-      title: backendProduct.name,
-      description: backendProduct.description ?? "",
-    };
-  }
-  return {};
+
+  const title = staticProduct?.seoTitle ?? backendProduct?.name ?? "The California Pickle";
+  const description = staticProduct?.seoDescription ?? backendProduct?.description ?? "";
+  const productUrl = `https://thecaliforniapickle.com/product/${slug}`;
+  const ogImage = backendProduct?.variants?.[0]?.images?.[0]?.url ?? "/bottle.webp";
+
+  return {
+    title,
+    description,
+    alternates: { canonical: productUrl },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: productUrl,
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
+  };
 }
 
 // ─── Map backend variants to the SizeOption shape ────────────────────────────
@@ -144,8 +158,45 @@ export default async function ProductPage({
         sizeOptions: staticFallback!.sizeOptions,
       };
 
+  // ─── JSON-LD Product Schema ────────────────────────────────────────────────
+  const lowestPrice = backendProduct
+    ? Math.min(...backendProduct.variants.map((v) => v.price))
+    : product.sizeOptions[0]?.price ?? 22;
+  const productImage = product.image.startsWith("http")
+    ? product.image
+    : `https://thecaliforniapickle.com${product.image}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: "Fast-acting electrolyte shot powered by real pickle brine. Science-backed cramp relief in under 80 seconds. 0g sugar, vegan, gluten-free.",
+    image: productImage,
+    brand: {
+      "@type": "Brand",
+      name: "The California Pickle",
+    },
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: "USD",
+      lowPrice: lowestPrice,
+      offerCount: product.sizeOptions.length,
+      availability: "https://schema.org/InStock",
+      url: `https://thecaliforniapickle.com/product/${slug}`,
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "5",
+      reviewCount: "1",
+    },
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Navbar />
       <main className="bg-white">
 
