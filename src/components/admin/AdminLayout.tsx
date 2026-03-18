@@ -9,7 +9,6 @@ import {
   Package,
   Users,
   Mail,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -41,7 +40,6 @@ const navItems = [
   { href: "/admin/activity", label: "Activity Log", icon: Activity },
   { href: "/admin/coupons", label: "Coupons", icon: Tag },
   { href: "/admin/emails", label: "Emails", icon: Mail },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
