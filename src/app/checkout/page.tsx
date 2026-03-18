@@ -3,7 +3,16 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, Truck, Lock, ChevronRight, RefreshCw, CheckCircle, X } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  Truck,
+  Lock,
+  ChevronRight,
+  RefreshCw,
+  CheckCircle,
+  X,
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useCart } from "@/components/CartContext";
@@ -44,10 +53,15 @@ export default function CheckoutPage() {
   const [couponOpen, setCouponOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
-  const [appliedCoupon, setAppliedCoupon] = useState<null | { code: string; discountPercent: number }>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<null | {
+    code: string;
+    discountPercent: number;
+  }>(null);
   const [couponError, setCouponError] = useState("");
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFormChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name } = e.target;
     let value = e.target.value;
 
@@ -67,7 +81,10 @@ export default function CheckoutPage() {
         value = value.replace(/[^a-zA-Z\s'-]/g, "").slice(0, 50);
         break;
       case "state":
-        value = value.replace(/[^a-zA-Z]/g, "").slice(0, 2).toUpperCase();
+        value = value
+          .replace(/[^a-zA-Z]/g, "")
+          .slice(0, 2)
+          .toUpperCase();
         break;
       case "zip":
         value = value.replace(/\D/g, "").slice(0, 5);
@@ -78,7 +95,12 @@ export default function CheckoutPage() {
     }
 
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (formErrors[name]) setFormErrors((prev) => { const next = {...prev}; delete next[name]; return next; });
+    if (formErrors[name])
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
     // Reset rates when address changes
     if (["address", "city", "state", "zip"].includes(name)) {
       setRatesLoaded(false);
@@ -137,7 +159,9 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.message || "Could not get shipping rates. Please try again.");
+        toast.error(
+          data.message || "Could not get shipping rates. Please try again.",
+        );
         return;
       }
 
@@ -169,7 +193,10 @@ export default function CheckoutPage() {
       });
       const data = await res.json();
       if (data.valid) {
-        setAppliedCoupon({ code: data.code, discountPercent: data.discountPercent });
+        setAppliedCoupon({
+          code: data.code,
+          discountPercent: data.discountPercent,
+        });
         setCouponError("");
         toast.success(`Coupon applied — ${data.discountPercent}% off!`);
       } else {
@@ -235,7 +262,9 @@ export default function CheckoutPage() {
           const msg = data.errors.map((e: any) => e.message).join(", ");
           toast.error(msg);
         } else {
-          toast.error(data.message || data.error || "Order failed. Please try again.");
+          toast.error(
+            data.message || data.error || "Order failed. Please try again.",
+          );
         }
         return;
       }
@@ -256,7 +285,9 @@ export default function CheckoutPage() {
     }
   };
 
-  const discount = appliedCoupon ? (total * appliedCoupon.discountPercent / 100) : 0;
+  const discount = appliedCoupon
+    ? (total * appliedCoupon.discountPercent) / 100
+    : 0;
   const grandTotal = total - discount + (selectedRate?.amount ?? 0);
 
   return (
@@ -266,9 +297,16 @@ export default function CheckoutPage() {
         {/* Breadcrumb */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-black/40">
-            <Link href="/" className="hover:text-black transition-colors">Home</Link>
+            <Link href="/" className="hover:text-black transition-colors">
+              Home
+            </Link>
             <ChevronRight size={8} className="text-black" strokeWidth={5} />
-            <Link href="/product" className="hover:text-black transition-colors">Product</Link>
+            <Link
+              href="/product"
+              className="hover:text-black transition-colors"
+            >
+              Product
+            </Link>
             <ChevronRight size={8} className="text-black" strokeWidth={5} />
             <span className="text-black">Checkout</span>
           </nav>
@@ -283,7 +321,6 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 lg:gap-10 items-start">
               {/* Left: Forms */}
               <div className="space-y-6 sm:space-y-8 order-2 lg:order-1">
-
                 {/* Customer info */}
                 <div className="bg-[#f9f9f9] border-2 border-black rounded-sm p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                   <h2 className="text-xl font-black text-black mb-6 uppercase tracking-tighter italic">
@@ -410,7 +447,10 @@ export default function CheckoutPage() {
                           onChange={handleFormChange}
                           onBlur={() => {
                             if (form.zip.length === 4) {
-                              setForm((prev) => ({ ...prev, zip: "0" + prev.zip }));
+                              setForm((prev) => ({
+                                ...prev,
+                                zip: "0" + prev.zip,
+                              }));
                             }
                           }}
                           required
@@ -461,7 +501,8 @@ export default function CheckoutPage() {
                   {!ratesLoaded ? (
                     <div className="space-y-3">
                       <p className="text-[10px] font-black text-black/40 uppercase tracking-widest leading-relaxed">
-                        Fill in your address above, then click below to see live shipping rates.
+                        Fill in your address above, then click below to see live
+                        shipping rates.
                       </p>
                       <button
                         type="button"
@@ -485,10 +526,13 @@ export default function CheckoutPage() {
                   ) : (
                     <div className="space-y-4">
                       {Object.entries(
-                        rates.reduce<Record<string, ShippingRate[]>>((acc, r) => {
-                          (acc[r.carrier] ??= []).push(r);
-                          return acc;
-                        }, {})
+                        rates.reduce<Record<string, ShippingRate[]>>(
+                          (acc, r) => {
+                            (acc[r.carrier] ??= []).push(r);
+                            return acc;
+                          },
+                          {},
+                        ),
                       ).map(([carrier, carrierRates]) => (
                         <div key={carrier}>
                           <p className="text-[9px] font-black uppercase tracking-[0.2em] text-black/40 mb-1.5 px-1">
@@ -507,7 +551,9 @@ export default function CheckoutPage() {
                                 }`}
                               >
                                 <div className="flex items-center gap-3">
-                                  <div className={`w-4 h-4 rounded-full border-2 border-black flex items-center justify-center ${selectedRate?.rateId === rate.rateId ? "bg-black" : "bg-white"}`}>
+                                  <div
+                                    className={`w-4 h-4 rounded-full border-2 border-black flex items-center justify-center ${selectedRate?.rateId === rate.rateId ? "bg-black" : "bg-white"}`}
+                                  >
                                     {selectedRate?.rateId === rate.rateId && (
                                       <div className="w-2 h-2 rounded-full bg-[#a3e635]" />
                                     )}
@@ -517,7 +563,9 @@ export default function CheckoutPage() {
                                       {rate.service}
                                     </p>
                                     <p className="text-[9px] font-black text-black/50 uppercase tracking-widest mt-0.5">
-                                      {rate.estimatedDays ? `Est. ${rate.estimatedDays} day${rate.estimatedDays > 1 ? "s" : ""}` : rate.durationTerms || ""}
+                                      {rate.estimatedDays
+                                        ? `Est. ${rate.estimatedDays} day${rate.estimatedDays > 1 ? "s" : ""}`
+                                        : rate.durationTerms || ""}
                                     </p>
                                   </div>
                                 </div>
@@ -532,17 +580,20 @@ export default function CheckoutPage() {
                     </div>
                   )}
                 </div>
-
               </div>
 
               {/* Right: Order summary */}
               <div className="lg:sticky lg:top-40 space-y-5 order-1 lg:order-2">
                 <div className="bg-white border-2 border-black rounded-sm p-6 shadow-[8px_8px_0px_0px_rgba(163,230,53,1)]">
-                  <h2 className="text-xl font-black text-black mb-6 uppercase tracking-tighter italic">Order Summary</h2>
+                  <h2 className="text-xl font-black text-black mb-6 uppercase tracking-tighter italic">
+                    Order Summary
+                  </h2>
 
                   {items.length === 0 ? (
                     <div className="text-center py-10">
-                      <p className="text-black/40 font-black text-[9px] uppercase tracking-widest mb-5">Your cart is empty</p>
+                      <p className="text-black/40 font-black text-[9px] uppercase tracking-widest mb-5">
+                        Your cart is empty
+                      </p>
                       <Link
                         href="/product"
                         className="inline-block border-2 border-black px-5 py-2.5 text-[10px] font-black uppercase tracking-widest hover:bg-[#a3e635] transition-colors"
@@ -553,7 +604,10 @@ export default function CheckoutPage() {
                   ) : (
                     <div className="space-y-5">
                       {items.map((item) => (
-                        <div key={item.id} className="flex gap-4 border-b border-black/5 pb-5 last:border-0 last:pb-0">
+                        <div
+                          key={item.id}
+                          className="flex gap-4 border-b border-black/5 pb-5 last:border-0 last:pb-0"
+                        >
                           <div className="w-16 h-16 bg-[#f9f9f9] border border-black rounded-sm flex-shrink-0 flex items-center justify-center">
                             <Image
                               src={item.image}
@@ -574,7 +628,9 @@ export default function CheckoutPage() {
                               <div className="inline-flex items-center border border-black rounded-sm overflow-hidden bg-white">
                                 <button
                                   type="button"
-                                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                  onClick={() =>
+                                    updateQuantity(item.id, item.quantity - 1)
+                                  }
                                   className="px-1.5 py-0.5 hover:bg-[#a3e635] border-r border-black transition-colors"
                                 >
                                   <Minus size={10} strokeWidth={4} />
@@ -584,7 +640,9 @@ export default function CheckoutPage() {
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                  onClick={() =>
+                                    updateQuantity(item.id, item.quantity + 1)
+                                  }
                                   className="px-1.5 py-0.5 hover:bg-[#a3e635] border-l border-black transition-colors"
                                 >
                                   <Plus size={10} strokeWidth={4} />
@@ -618,7 +676,10 @@ export default function CheckoutPage() {
                               <input
                                 type="text"
                                 value={couponCode}
-                                onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }}
+                                onChange={(e) => {
+                                  setCouponCode(e.target.value.toUpperCase());
+                                  setCouponError("");
+                                }}
                                 placeholder="ENTER CODE"
                                 className="flex-1 border-2 border-black rounded-sm px-3 py-2 text-xs font-black uppercase tracking-wider focus:outline-none focus:bg-[#a3e635]/20 transition"
                               />
@@ -640,7 +701,8 @@ export default function CheckoutPage() {
                           {appliedCoupon && (
                             <div className="flex items-center justify-between bg-[#a3e635]/20 border-2 border-[#a3e635] rounded-sm px-3 py-2">
                               <span className="text-[10px] font-black uppercase tracking-widest text-black">
-                                {appliedCoupon.code} applied — {appliedCoupon.discountPercent}% off
+                                {appliedCoupon.code} applied —{" "}
+                                {appliedCoupon.discountPercent}% off
                               </span>
                               <button
                                 type="button"
@@ -664,16 +726,24 @@ export default function CheckoutPage() {
                       </div>
                       {appliedCoupon && (
                         <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                          <span className="text-[#65a30d]">Discount ({appliedCoupon.discountPercent}%)</span>
-                          <span className="text-[#65a30d]">-${discount.toFixed(2)}</span>
+                          <span className="text-[#65a30d]">
+                            Discount ({appliedCoupon.discountPercent}%)
+                          </span>
+                          <span className="text-[#65a30d]">
+                            -${discount.toFixed(2)}
+                          </span>
                         </div>
                       )}
                       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                         <span className="text-black/40">Shipping</span>
                         {selectedRate ? (
-                          <span className="text-black">${selectedRate.amount.toFixed(2)}</span>
+                          <span className="text-black">
+                            ${selectedRate.amount.toFixed(2)}
+                          </span>
                         ) : (
-                          <span className="text-black/30 italic">Select above</span>
+                          <span className="text-black/30 italic">
+                            Select above
+                          </span>
                         )}
                       </div>
                       <div className="flex justify-between text-2xl font-black border-t border-black pt-4 mt-3 uppercase tracking-tighter italic">
@@ -686,7 +756,11 @@ export default function CheckoutPage() {
 
                 {selectedRate && (
                   <div className="flex items-center gap-3 bg-[#a3e635] border-2 border-black rounded-sm px-5 py-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    <CheckCircle size={16} className="text-black flex-shrink-0" strokeWidth={3} />
+                    <CheckCircle
+                      size={16}
+                      className="text-black flex-shrink-0"
+                      strokeWidth={3}
+                    />
                     <p className="text-[10px] font-black text-black uppercase tracking-widest">
                       {selectedRate.carrier} {selectedRate.service} selected
                     </p>
@@ -699,8 +773,18 @@ export default function CheckoutPage() {
                     ⚠ Important Policy — Please Read
                   </p>
                   <p className="text-[10px] font-bold leading-relaxed text-white/80">
-                    <span className="text-white font-black">ALL SALES ARE FINAL.</span> Due to the perishable and consumable nature of our food &amp; beverage products, we do not accept returns or issue refunds once an order has been placed. By completing this purchase, you acknowledge and agree to this no-return, no-refund policy. If your order arrives damaged, please contact us within 48 hours with photos at{" "}
-                    <span className="text-[#a3e635]">support@thecaliforniapickle.com</span>
+                    <span className="text-white font-black">
+                      ALL SALES ARE FINAL.
+                    </span>{" "}
+                    Due to the perishable and consumable nature of our food
+                    &amp; beverage products, we do not accept returns or issue
+                    refunds once an order has been placed. By completing this
+                    purchase, you acknowledge and agree to this no-return,
+                    no-refund policy. If your order arrives damaged, please
+                    contact us within 48 hours with photos at{" "}
+                    <span className="text-[#a3e635]">
+                      support@thecaliforniapickle.com
+                    </span>
                   </p>
                 </div>
 
@@ -709,12 +793,17 @@ export default function CheckoutPage() {
                   disabled={submitting || items.length === 0 || !selectedRate}
                   className="btn-secondary w-full py-5 text-lg disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {submitting ? "PROCESSING..." : !selectedRate ? "SELECT SHIPPING FIRST" : `DEPLOY ORDER · $${grandTotal.toFixed(2)}`}
+                  {submitting
+                    ? "PROCESSING..."
+                    : !selectedRate
+                      ? "SELECT SHIPPING FIRST"
+                      : `DEPLOY ORDER · $${grandTotal.toFixed(2)}`}
                 </button>
 
-                <p className="text-center text-[9px] font-black uppercase tracking-[0.2em] text-black/40 flex items-center justify-center gap-2">
-                  <Lock size={10} strokeWidth={3} />
-                  Secure checkout · 256-bit encrypted · No refunds on food products
+                <p className="text-center text-[9px] font-black uppercase tracking-[0.2em] text-black/40 flex justify-center gap-2">
+                  <Lock size={15} strokeWidth={3} />
+                  Secure checkout · 256-bit encrypted · No refunds on food
+                  products
                 </p>
               </div>
             </div>

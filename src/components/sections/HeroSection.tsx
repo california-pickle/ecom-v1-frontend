@@ -63,21 +63,29 @@ function DesktopHero({ productSlug }: { productSlug: string }) {
           <h1 className="text-5xl md:text-7xl xl:text-8xl font-black text-black leading-[0.85] tracking-tighter mb-8 uppercase">
             Stop&nbsp;Muscle
             <br />
-            <span className="text-[#a3e635] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">Cramps</span>
+            <span className="text-[#a3e635] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+              Cramps
+            </span>
             <br />
             <span className="whitespace-nowrap">in Seconds</span>
           </h1>
 
           <p className="text-sm text-black font-medium max-w-md leading-tight mb-8 uppercase tracking-tight">
-            Fast-acting electrolyte shot powered by real pickle brine. Science-backed cramp relief that works in under
-            80 seconds.
+            Fast-acting electrolyte shot powered by real pickle brine.
+            Science-backed cramp relief that works in under 80 seconds.
           </p>
 
           <div className="flex gap-4 mb-12">
-            <Link href={`/product/${productSlug}`} className="btn-primary text-center min-w-[200px]">
+            <Link
+              href={`/product/${productSlug}`}
+              className="btn-primary text-center min-w-[200px]"
+            >
               Buy Now
             </Link>
-            <button onClick={() => scrollTo("why-it-works")} className="btn-outline min-w-[200px]">
+            <button
+              onClick={() => scrollTo("why-it-works")}
+              className="btn-outline min-w-[200px]"
+            >
               Learn More
             </button>
           </div>
@@ -93,7 +101,9 @@ function DesktopHero({ productSlug }: { productSlug: string }) {
                 <div className="bg-[#a3e635] rounded-sm border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-2">
                   <Icon size={14} className="text-black" />
                 </div>
-                <span className="text-xs font-black text-black uppercase tracking-widest">{label}</span>
+                <span className="text-xs font-black text-black uppercase tracking-widest">
+                  {label}
+                </span>
               </div>
             ))}
           </div>
@@ -147,9 +157,9 @@ function MobileHero({ productSlug }: { productSlug: string }) {
       <div className="relative z-10 px-5 sm:px-7 md:px-10 pb-8 sm:pb-10 md:pb-14">
         {/* Badge */}
         <div className="inline-flex items-center gap-2 mb-5 sm:mb-6">
-          <div className="flex items-center gap-1.5 bg-[#e8f55a]/20 border border-[#e8f55a]/60 backdrop-blur-sm rounded-sm px-3 py-1.5">
-            <Star size={10} fill="#e8f55a" className="text-[#e8f55a]" />
-            <span className="font-black text-[#e8f55a] uppercase tracking-widest text-[10px] sm:text-xs">
+          <div className="flex items-center gap-1.5 bg-white/60  border border-[#e8f55a] backdrop-blur-sm rounded-sm px-3 py-1.5">
+            <Star size={10} fill="#e8f55a" className="text-[#89a02c]" />
+            <span className="font-black text-[#89a02c]  uppercase tracking-widest text-[10px] sm:text-xs">
               #1 Performance Pickle Juice
             </span>
           </div>
@@ -169,7 +179,8 @@ function MobileHero({ productSlug }: { productSlug: string }) {
 
         {/* Description */}
         <p className="text-sm sm:text-base md:text-lg text-white/85 font-medium leading-snug mb-6 sm:mb-8 uppercase tracking-tight max-w-sm">
-          Fast-acting electrolyte shot. Real pickle brine. Works in under 80&nbsp;seconds.
+          Fast-acting electrolyte shot. Real pickle brine. Works in under
+          80&nbsp;seconds.
         </p>
 
         {/* CTAs */}
@@ -201,7 +212,9 @@ function MobileHero({ productSlug }: { productSlug: string }) {
               <div className="bg-white/15 border border-white/40 rounded-sm p-1.5 backdrop-blur-sm">
                 <Icon size={13} className="text-white" />
               </div>
-              <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-widest">{label}</span>
+              <span className="text-[10px] sm:text-xs font-black text-white uppercase tracking-widest">
+                {label}
+              </span>
             </div>
           ))}
         </div>
@@ -213,7 +226,11 @@ function MobileHero({ productSlug }: { productSlug: string }) {
 /* ─────────────────────────────────────────────────────────────────────────────
    ROOT EXPORT
 ───────────────────────────────────────────────────────────────────────────── */
-export default function HeroSection({ productSlug = "california-pickle" }: { productSlug?: string }) {
+export default function HeroSection({
+  productSlug = "california-pickle",
+}: {
+  productSlug?: string;
+}) {
   return (
     <section id="hero" className="relative overflow-hidden flex flex-col">
       <DesktopHero productSlug={productSlug} />

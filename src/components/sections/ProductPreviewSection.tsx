@@ -35,7 +35,7 @@ export default function ProductPreviewSection({ product }: Props) {
             {/* Text */}
             <div className="p-8 sm:p-12 lg:p-20 order-2 lg:order-1">
               {/* Stars */}
-              <div className="flex gap-1 mb-6">
+              <div className="flex gap-1 mb-3 sm:mb-6">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} size={18} className="fill-black text-black" />
                 ))}
@@ -44,16 +44,16 @@ export default function ProductPreviewSection({ product }: Props) {
                 </span>
               </div>
 
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-black leading-[0.85] tracking-tighter mb-6 sm:mb-8 uppercase">
+              <h2 className="text-2xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-black leading-[0.85] tracking-tighter mb-3 sm:mb-6 sm:mb-8 uppercase">
                 {nameStart}
                 <br />
                 {nameLast}.
               </h2>
-              <p className="text-black/70 font-bold text-lg leading-tight mb-8 uppercase tracking-tight">
+              <p className="text-black/70 font-bold text-[15px] sm:text-lg leading-tight mb-3 sm:mb-8 uppercase tracking-tight">
                 {productDescription}
               </p>
               <div className="flex items-baseline gap-3 mb-8 sm:mb-10">
-                <span className="text-5xl sm:text-7xl font-black text-black tracking-tighter">${startingPrice}</span>
+                <span className="text-3xl sm:text-7xl font-black text-black tracking-tighter">${startingPrice}</span>
                 <span className="text-[#4a5e2a] font-black text-xs uppercase tracking-widest">{priceSubLabel}</span>
               </div>
 

@@ -7,6 +7,7 @@ import { useAdminAuth } from "@/lib/admin-auth";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import Link from "next/link";
+import logo from "../../../../public/logo.webp";
 
 export default function AdminLoginPage() {
   const { isAuthenticated } = useAdminAuth();
@@ -46,14 +47,14 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-2">
-            <div className="w-10 h-10 bg-[#84cc16] rounded-lg flex items-center justify-center">
-              <span className="text-black font-black text-lg">P</span>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+              <img src="/logo.webp" alt="logo" width={40} height={40} />
             </div>
             <span className="text-2xl font-black text-gray-900 tracking-tight">
-              PICKLE
+              The California
             </span>
             <span className="text-2xl font-black text-[#84cc16] tracking-tight">
-              ADMIN
+              PICKLE
             </span>
           </div>
           <p className="text-gray-500 text-sm mt-1">Management Dashboard</p>
@@ -117,7 +118,8 @@ export default function AdminLoginPage() {
             {/* Asol Backend theke asha Error Message */}
             {isError && (
               <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3 font-medium">
-                {(error as any)?.response?.data?.message || "Invalid credentials. Please try again."}
+                {(error as any)?.response?.data?.message ||
+                  "Invalid credentials. Please try again."}
               </div>
             )}
 
