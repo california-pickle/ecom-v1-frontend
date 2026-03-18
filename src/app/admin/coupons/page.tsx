@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axiosInstance";
-import { Tag, Plus, X, RefreshCw, CheckCircle, XCircle } from "lucide-react";
+import { Tag, Plus, X, RefreshCw, CheckCircle, XCircle, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -303,6 +303,13 @@ export default function CouponsPage() {
                             <Tag className="w-3.5 h-3.5 text-[#65a30d]" />
                           </div>
                           <span className="font-mono font-bold text-gray-900 text-xs tracking-wide">{coupon.code}</span>
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(coupon.code); toast.success("Copied!"); }}
+                            className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition"
+                            title="Copy code"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                       <td className="px-3 py-3.5">

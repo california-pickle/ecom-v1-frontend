@@ -60,6 +60,8 @@ interface Order {
   items: OrderItem[];
   totalAmount: number;
   shippingCost: number;
+  discountAmount?: number;
+  discountCode?: string | null;
   orderStatus: OrderStatus;
   paymentStatus: PaymentStatus;
   stripeSessionId?: string;
@@ -577,22 +579,35 @@ export default function OrdersPage() {
                     <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
                       <CreditCard className="w-3 h-3" /> Summary
                     </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between text-gray-500">
-                        <span>Subtotal</span>
-                        <span>${liveOrder.totalAmount.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-gray-500">
-                        <span>Shipping</span>
-                        <span>${liveOrder.shippingCost?.toFixed(2) ?? "---"}</span>
-                      </div>
-                      <div className="border-t border-gray-200 pt-2 flex justify-between">
-                        <span className="font-bold text-gray-900">Total</span>
-                        <span className="text-lg font-black text-gray-900">
-                          ${(liveOrder.totalAmount + (liveOrder.shippingCost ?? 0)).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
+                    {(() => {
+                      const discount = liveOrder.discountAmount ?? 0;
+                      const originalSubtotal = liveOrder.totalAmount + discount;
+                      const grandTotal = liveOrder.totalAmount + (liveOrder.shippingCost ?? 0);
+                      return (
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between text-gray-500">
+                            <span>Subtotal</span>
+                            <span>${originalSubtotal.toFixed(2)}</span>
+                          </div>
+                          {discount > 0 && (
+                            <div className="flex justify-between text-[#65a30d]">
+                              <span>Discount{liveOrder.discountCode ? ` (${liveOrder.discountCode})` : ""}</span>
+                              <span>-${discount.toFixed(2)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-gray-500">
+                            <span>Shipping</span>
+                            <span>${liveOrder.shippingCost?.toFixed(2) ?? "---"}</span>
+                          </div>
+                          <div className="border-t border-gray-200 pt-2 flex justify-between">
+                            <span className="font-bold text-gray-900">Total</span>
+                            <span className="text-lg font-black text-gray-900">
+                              ${grandTotal.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </section>
 
                   {/* Status Tiles */}
