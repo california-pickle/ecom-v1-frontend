@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, persistDb } from "@/lib/db";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000/api";
+const PROXY_SECRET = process.env.PROXY_SECRET || "";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,7 @@ export async function POST(req: NextRequest) {
     // Server-side coupon validation — only the coupon code comes from the browser.
     // discountPercent is read from the server-side DB, never from the request body.
     let discountPercent = 0;
+    let matchedCoupon: (typeof db.coupons)[number] | null = null;
     if (body.couponCode) {
       const now = new Date();
       const coupon = db.coupons.find(
@@ -21,6 +23,7 @@ export async function POST(req: NextRequest) {
       );
       if (coupon) {
         discountPercent = coupon.discountPercent;
+        matchedCoupon = coupon;
       }
     }
 
@@ -35,6 +38,7 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(PROXY_SECRET ? { "x-proxy-secret": PROXY_SECRET } : {}),
       },
       body: JSON.stringify(payload),
     });
@@ -43,6 +47,12 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
+    }
+
+    // Increment coupon usedCount AFTER successful order creation
+    if (matchedCoupon) {
+      matchedCoupon.usedCount += 1;
+      persistDb();
     }
 
     return NextResponse.json(data, { status: 201 });

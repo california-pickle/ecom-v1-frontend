@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, generateCouponId, generateCouponCode, today, persistDb } from "@/lib/db";
 
-export async function GET() {
+function isAdmin(req: NextRequest): boolean {
+  return !!req.cookies.get("accessToken")?.value;
+}
+
+export async function GET(req: NextRequest) {
+  if (!isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const sorted = [...db.coupons].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
@@ -9,6 +14,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const { discountPercent, maxUses, expiresAt, note, code } = await req.json();
 

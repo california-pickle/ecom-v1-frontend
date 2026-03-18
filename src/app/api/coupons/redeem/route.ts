@@ -9,9 +9,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Coupon code is required" }, { status: 400 });
     }
 
+    const now = new Date();
     const coupon = db.coupons.find((c) => c.code.toLowerCase() === code.toLowerCase());
 
-    if (!coupon || !coupon.active || coupon.usedCount >= coupon.maxUses) {
+    if (!coupon || !coupon.active || coupon.usedCount >= coupon.maxUses || now > new Date(coupon.expiresAt)) {
       return NextResponse.json({ error: "Coupon no longer valid" }, { status: 400 });
     }
 
