@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Clock,
   ChevronDown,
+  Tag,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -57,6 +58,13 @@ export default function EmailsPage() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [sending, setSending] = useState(false);
+
+  // Coupon state (compose tab)
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponDiscount, setCouponDiscount] = useState("10");
+  const [couponDays, setCouponDays] = useState("7");
+  const [generatedCoupon, setGeneratedCoupon] = useState<{ code: string; discountPercent: number } | null>(null);
+  const [generatingCoupon, setGeneratingCoupon] = useState(false);
 
   // Sent state
   const [sentEmails, setSentEmails] = useState<SentEmail[]>([]);
@@ -135,6 +143,37 @@ export default function EmailsPage() {
     }
   };
 
+  // ─── Coupon Generation ──────────────────────────────────────────────────────
+
+  const generateCoupon = async () => {
+    const discountPercent = parseInt(couponDiscount, 10);
+    const days = parseInt(couponDays, 10);
+    if (!discountPercent || discountPercent < 1 || discountPercent > 50) {
+      toast.error("Discount must be between 1% and 50%");
+      return;
+    }
+    setGeneratingCoupon(true);
+    try {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + days);
+      const expiresAtStr = expiresAt.toISOString().split("T")[0];
+
+      const res = await fetch("/api/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discountPercent, maxUses: 1, expiresAt: expiresAtStr, note: `Sent via email to ${composeTo || "customer"}` }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to create coupon");
+      setGeneratedCoupon({ code: data.code, discountPercent: data.discountPercent });
+      toast.success(`Coupon ${data.code} generated!`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to generate coupon");
+    } finally {
+      setGeneratingCoupon(false);
+    }
+  };
+
   // ─── Compose / Send ────────────────────────────────────────────────────────
 
   const handleSend = async () => {
@@ -144,6 +183,11 @@ export default function EmailsPage() {
     }
     setSending(true);
     try {
+      // Append coupon info to body if one was generated
+      const finalBody = generatedCoupon
+        ? `${composeBody}\n\n---\nHere is your exclusive discount coupon: ${generatedCoupon.code}\nSave ${generatedCoupon.discountPercent}% on your next order at checkout.`
+        : composeBody;
+
       // The branded email boilerplate (logo, Hi name, footer) is built server-side.
       const sendRes = await fetch("/api/emails/send", {
         method: "POST",
@@ -152,7 +196,7 @@ export default function EmailsPage() {
           to: composeTo,
           toName: composeName,
           subject: composeSubject,
-          body: composeBody,
+          body: finalBody,
         }),
       });
       if (!sendRes.ok) throw new Error("Failed to send email");
@@ -164,6 +208,8 @@ export default function EmailsPage() {
       setComposeName("");
       setComposeSubject("");
       setComposeBody("");
+      setGeneratedCoupon(null);
+      setCouponOpen(false);
     } catch {
       toast.error("Failed to send email");
     } finally {
@@ -511,6 +557,81 @@ export default function EmailsPage() {
                 </BrandedEmailShell>
               </div>
             )}
+
+            {/* Coupon Section */}
+            <div className="border-t border-gray-100 pt-4">
+              {!couponOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setCouponOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#65a30d] hover:underline"
+                >
+                  <Tag className="w-3.5 h-3.5" /> Attach Coupon to Email
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5 text-[#65a30d]" />
+                      <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Generate Coupon</p>
+                    </div>
+                    <button
+                      onClick={() => { setCouponOpen(false); setGeneratedCoupon(null); }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {generatedCoupon ? (
+                    <div className="flex items-center justify-between bg-[#84cc16]/20 border border-[#84cc16] rounded-lg px-4 py-3">
+                      <div>
+                        <p className="text-sm font-black text-gray-900 font-mono">{generatedCoupon.code}</p>
+                        <p className="text-xs text-[#65a30d] font-semibold">{generatedCoupon.discountPercent}% off — will be appended to email</p>
+                      </div>
+                      <button onClick={() => setGeneratedCoupon(null)} className="text-gray-500 hover:text-gray-700">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-semibold text-gray-500">Discount:</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={50}
+                          value={couponDiscount}
+                          onChange={(e) => setCouponDiscount(e.target.value)}
+                          className="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#84cc16]"
+                        />
+                        <span className="text-xs text-gray-500">%</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-semibold text-gray-500">Expires in:</label>
+                        <select
+                          value={couponDays}
+                          onChange={(e) => setCouponDays(e.target.value)}
+                          className="px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16]"
+                        >
+                          {[3, 4, 5, 6, 7].map((d) => (
+                            <option key={d} value={String(d)}>{d} days</option>
+                          ))}
+                        </select>
+                      </div>
+                      <button
+                        onClick={generateCoupon}
+                        disabled={generatingCoupon}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#84cc16] hover:bg-[#65a30d] text-black text-xs font-bold rounded-lg transition disabled:opacity-50"
+                      >
+                        {generatingCoupon ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Tag className="w-3.5 h-3.5" />}
+                        {generatingCoupon ? "Generating..." : "Generate"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Send button */}
             <button

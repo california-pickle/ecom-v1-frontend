@@ -7,8 +7,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Strip frontend-only fields.
-    const { productSubtotal: _unused, discountAmount: _ignored, discountPercent: _blocked, couponCode: _coupon, ...rest } = body;
+    // Strip frontend-only computed fields. couponCode passes through for backend validation.
+    const { productSubtotal: _unused, discountAmount: _ignored, discountPercent: _blocked, ...rest } = body;
     const payload = { ...rest };
 
     const response = await fetch(`${BACKEND_URL}/order/checkout`, {

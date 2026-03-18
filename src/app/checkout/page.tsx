@@ -11,6 +11,7 @@ import {
   ChevronRight,
   RefreshCw,
   CheckCircle,
+  X,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -48,6 +49,12 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [formErrors, setFormErrors] = useState<Record<string, boolean>>({});
+
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<null | { code: string; discountPercent: number }>(null);
+  const [couponError, setCouponError] = useState("");
 
   const handleFormChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -170,6 +177,41 @@ export default function CheckoutPage() {
     }
   };
 
+  const applyCoupon = async () => {
+    const code = couponCode.trim();
+    if (!code) return;
+    setCouponLoading(true);
+    setCouponError("");
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setAppliedCoupon({ code: data.code, discountPercent: data.discountPercent });
+        setCouponError("");
+        setCouponOpen(false);
+        toast.success(`Coupon applied — ${data.discountPercent}% off!`);
+      } else {
+        setCouponError(data.message || "Invalid coupon code");
+        setAppliedCoupon(null);
+      }
+    } catch {
+      setCouponError("Failed to validate coupon. Try again.");
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponError("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) {
@@ -204,6 +246,7 @@ export default function CheckoutPage() {
           })),
           shippoRateId: selectedRate.rateId,
           shippingCost: selectedRate.amount,
+          ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}),
         }),
       });
 
@@ -233,7 +276,8 @@ export default function CheckoutPage() {
     }
   };
 
-  const grandTotal = total + (selectedRate?.amount ?? 0);
+  const discount = appliedCoupon ? Math.round(total * appliedCoupon.discountPercent) / 100 : 0;
+  const grandTotal = total - discount + (selectedRate?.amount ?? 0);
 
   return (
     <>
@@ -604,28 +648,91 @@ export default function CheckoutPage() {
                   )}
 
                   {items.length > 0 && (
-                    <div className="border-t-2 border-black mt-6 pt-6 space-y-3">
-                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                        <span className="text-black/40">Subtotal</span>
-                        <span className="text-black">${total.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                        <span className="text-black/40">Shipping</span>
-                        {selectedRate ? (
-                          <span className="text-black">
-                            ${selectedRate.amount.toFixed(2)}
-                          </span>
+                    <>
+                      {/* Coupon Section */}
+                      <div className="border-t-2 border-black mt-6 pt-4">
+                        {!appliedCoupon ? (
+                          <>
+                            {!couponOpen ? (
+                              <button
+                                type="button"
+                                onClick={() => setCouponOpen(true)}
+                                className="text-[10px] font-black uppercase tracking-widest text-black/50 hover:text-black transition-colors"
+                              >
+                                + Apply Coupon Code
+                              </button>
+                            ) : (
+                              <div className="space-y-2">
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={couponCode}
+                                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                    onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), applyCoupon())}
+                                    placeholder="PICKLE-XXXXXX"
+                                    className="flex-1 px-3 py-2 border-2 border-black rounded-sm text-[11px] font-black uppercase focus:outline-none focus:bg-[#a3e635] transition-all placeholder:opacity-30"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={applyCoupon}
+                                    disabled={couponLoading || !couponCode.trim()}
+                                    className="px-4 py-2 border-2 border-black rounded-sm text-[11px] font-black uppercase tracking-widest bg-white hover:bg-[#a3e635] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                  >
+                                    {couponLoading ? "..." : "Apply"}
+                                  </button>
+                                </div>
+                                {couponError && (
+                                  <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">{couponError}</p>
+                                )}
+                              </div>
+                            )}
+                          </>
                         ) : (
-                          <span className="text-black/30 italic">
-                            Select above
-                          </span>
+                          <div className="flex items-center justify-between bg-[#a3e635] border-2 border-black rounded-sm px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            <div>
+                              <p className="text-[10px] font-black text-black uppercase tracking-widest">{appliedCoupon.code}</p>
+                              <p className="text-[9px] font-black text-black/60 uppercase tracking-widest">{appliedCoupon.discountPercent}% off applied</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={removeCoupon}
+                              className="w-6 h-6 flex items-center justify-center border-2 border-black rounded-sm bg-white hover:bg-red-50 transition-colors"
+                            >
+                              <X size={10} strokeWidth={4} />
+                            </button>
+                          </div>
                         )}
                       </div>
-                      <div className="flex justify-between text-2xl font-black border-t border-black pt-4 mt-3 uppercase tracking-tighter italic">
-                        <span>Total</span>
-                        <span>${grandTotal.toFixed(2)}</span>
+
+                      <div className="border-t-2 border-black mt-4 pt-6 space-y-3">
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                          <span className="text-black/40">Subtotal</span>
+                          <span className="text-black">${total.toFixed(2)}</span>
+                        </div>
+                        {appliedCoupon && (
+                          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                            <span className="text-[#65a30d]">Discount ({appliedCoupon.discountPercent}%)</span>
+                            <span className="text-[#65a30d]">-${discount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                          <span className="text-black/40">Shipping</span>
+                          {selectedRate ? (
+                            <span className="text-black">
+                              ${selectedRate.amount.toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="text-black/30 italic">
+                              Select above
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex justify-between text-2xl font-black border-t border-black pt-4 mt-3 uppercase tracking-tighter italic">
+                          <span>Total</span>
+                          <span>${grandTotal.toFixed(2)}</span>
+                        </div>
                       </div>
-                    </div>
+                    </>
                   )}
                 </div>
 

@@ -16,6 +16,7 @@ import {
   Bell,
   Activity,
   ClipboardList,
+  Tag,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ const navItems = [
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/activity", label: "Activity Log", icon: Activity },
   { href: "/admin/emails", label: "Emails", icon: Mail },
+  { href: "/admin/coupons", label: "Coupons", icon: Tag },
 ];
 
 export function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
