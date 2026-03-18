@@ -27,10 +27,13 @@ jobs:
             echo "▶ Installing dependencies..."
             npm ci
 
+            echo "▶ Clearing old build..."
+            rm -rf .next
+
             echo "▶ Building Next.js..."
             npm run build
 
-            echo "▶ Reloading pm2..."
-            pm2 reload pickle-frontend --update-env
+            echo "▶ Restarting pm2..."
+            pm2 restart pickle-frontend --update-env
 
             echo "✅ Frontend deployed successfully"
