@@ -16,8 +16,6 @@ interface SafeOrder {
   }[];
   totalAmount: number;
   shippingCost?: number;
-  discountAmount?: number;
-  discountCode?: string | null;
   paymentStatus: "pending" | "paid" | "failed";
   orderStatus: string;
   customerFirstName: string;
@@ -65,20 +63,6 @@ export default function OrderSuccessPage({
   useEffect(() => {
     if (order && !loading && order.paymentStatus === "paid") {
       clearCart();
-      // Redeem any coupon that was applied at checkout
-      const pendingCoupon = sessionStorage.getItem("pendingCoupon");
-      if (pendingCoupon) {
-        fetch("/api/coupons/redeem", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: pendingCoupon }),
-        }).then((res) => {
-          if (res.ok) sessionStorage.removeItem("pendingCoupon");
-          // On failure: keep in sessionStorage so next page load retries
-        }).catch(() => {
-          // Network error: keep in sessionStorage for retry
-        });
-      }
     }
   }, [order, loading, clearCart]);
 
@@ -168,25 +152,14 @@ export default function OrderSuccessPage({
               </div>
 
               {(() => {
-                const discount = order.discountAmount ?? 0;
                 const shipping = order.shippingCost ?? 0;
-                // originalSubtotal = net total + discount (reverse the reduction)
-                const originalSubtotal = order.totalAmount + discount;
                 const grandTotal = order.totalAmount + shipping;
                 return (
                   <div className="border-t-2 border-black mt-8 pt-6 space-y-3">
                     <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                       <span className="text-black/40">Subtotal</span>
-                      <span className="text-black">${originalSubtotal.toFixed(2)}</span>
+                      <span className="text-black">${order.totalAmount.toFixed(2)}</span>
                     </div>
-                    {discount > 0 && (
-                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                        <span className="text-[#65a30d]">
-                          Discount{order.discountCode ? ` (${order.discountCode})` : ""}
-                        </span>
-                        <span className="text-[#65a30d]">-${discount.toFixed(2)}</span>
-                      </div>
-                    )}
                     {shipping > 0 && (
                       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                         <span className="text-black/40">Shipping</span>

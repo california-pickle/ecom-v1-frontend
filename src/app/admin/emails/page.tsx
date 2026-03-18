@@ -9,9 +9,7 @@ import {
   Pencil,
   Check,
   X,
-
   RefreshCw,
-  Tag,
   Clock,
   ChevronDown,
 } from "lucide-react";
@@ -34,20 +32,10 @@ interface SentEmail {
   toName: string;
   subject: string;
   body: string;
-  couponCode?: string;
   sentAt: string;
 }
 
 type Tab = "templates" | "compose" | "sent";
-
-// ─── Coupon Code Generator ──────────────────────────────────────────────────
-
-function generateCouponCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "PICKLE-";
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
@@ -68,10 +56,6 @@ export default function EmailsPage() {
   const [composeName, setComposeName] = useState("");
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
-  const [couponEnabled, setCouponEnabled] = useState(false);
-  const [couponDiscount, setCouponDiscount] = useState(10);
-  const [couponExpiryDays, setCouponExpiryDays] = useState(7);
-  const [couponCode, setCouponCode] = useState(() => generateCouponCode());
   const [sending, setSending] = useState(false);
 
   // Sent state
@@ -160,28 +144,7 @@ export default function EmailsPage() {
     }
     setSending(true);
     try {
-      let finalCouponCode: string | undefined;
-
-      // Create coupon first if enabled
-      if (couponEnabled) {
-        const couponRes = await fetch("/api/coupons", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            code: couponCode,
-            discountPercent: couponDiscount,
-            maxUses: 1,
-            expiresAt: new Date(Date.now() + couponExpiryDays * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-            note: `Email coupon for ${composeName || composeTo}`,
-          }),
-        });
-        if (!couponRes.ok) throw new Error("Failed to create coupon");
-        const couponData = await couponRes.json();
-        finalCouponCode = couponData.code;
-      }
-
       // The branded email boilerplate (logo, Hi name, footer) is built server-side.
-      // Coupon block is also injected server-side from the coupon record — admin just writes the message.
       const sendRes = await fetch("/api/emails/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -190,7 +153,6 @@ export default function EmailsPage() {
           toName: composeName,
           subject: composeSubject,
           body: composeBody,
-          ...(finalCouponCode ? { couponCode: finalCouponCode } : {}),
         }),
       });
       if (!sendRes.ok) throw new Error("Failed to send email");
@@ -202,10 +164,6 @@ export default function EmailsPage() {
       setComposeName("");
       setComposeSubject("");
       setComposeBody("");
-      setCouponEnabled(false);
-      setCouponDiscount(10);
-      setCouponExpiryDays(7);
-      setCouponCode(generateCouponCode());
     } catch {
       toast.error("Failed to send email");
     } finally {
@@ -537,89 +495,6 @@ export default function EmailsPage() {
               />
             </div>
 
-            {/* Coupon section */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setCouponEnabled(!couponEnabled)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition"
-              >
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-[#65a30d]" />
-                  <span className="text-sm font-semibold text-gray-700">Attach Coupon Code</span>
-                </div>
-                <div
-                  className={`w-9 h-5 rounded-full transition-colors relative ${
-                    couponEnabled ? "bg-[#84cc16]" : "bg-gray-300"
-                  }`}
-                >
-                  <div
-                    className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                      couponEnabled ? "translate-x-4" : "translate-x-0.5"
-                    }`}
-                  />
-                </div>
-              </button>
-
-              {couponEnabled && (
-                <div className="border-t border-gray-200 px-4 py-4 space-y-3 bg-gray-50/50">
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Discount */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Discount %</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={50}
-                        value={couponDiscount}
-                        onChange={(e) => setCouponDiscount(Math.max(1, Math.min(50, Number(e.target.value))))}
-                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84cc16]"
-                      />
-                    </div>
-
-                    {/* Expiry Days */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Expires In (days)</label>
-                      <select
-                        value={couponExpiryDays}
-                        onChange={(e) => setCouponExpiryDays(Number(e.target.value))}
-                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#84cc16]"
-                      >
-                        {[3, 4, 5, 6, 7].map((d) => (
-                          <option key={d} value={d}>{d} day{d > 1 ? "s" : ""}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Coupon code preview */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Coupon Code</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={couponCode}
-                        readOnly
-                        className="flex-1 px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white font-mono text-[#65a30d] font-bold"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setCouponCode(generateCouponCode())}
-                        className="flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
-                        title="Regenerate code"
-                      >
-                        <RefreshCw className="w-4 h-4 text-gray-500" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-gray-400">
-                    Coupon will be created and included in the email.
-                  </p>
-                </div>
-              )}
-            </div>
-
             {/* Live preview */}
             {(composeBody || composeName) && (
               <div>
@@ -632,13 +507,6 @@ export default function EmailsPage() {
                     <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{composeBody}</p>
                   ) : (
                     <p className="text-sm text-gray-300 italic">Your message will appear here...</p>
-                  )}
-                  {couponEnabled && (
-                    <div className="bg-[#f3ffe0] border-2 border-black rounded-lg p-4">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Your Exclusive Discount</p>
-                      <p className="text-2xl font-black tracking-widest text-[#5a9900] mb-1">{couponCode}</p>
-                      <p className="text-sm text-gray-600"><strong>{couponDiscount}% off</strong> your next order</p>
-                    </div>
                   )}
                 </BrandedEmailShell>
               </div>
@@ -703,14 +571,6 @@ export default function EmailsPage() {
                       <span className="text-xs font-semibold text-gray-500 w-16">Date</span>
                       <span className="text-gray-600">{selectedSent.sentAt}</span>
                     </div>
-                    {selectedSent.couponCode && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-xs font-semibold text-gray-500 w-16">Coupon</span>
-                        <span className="font-mono text-xs font-bold text-[#65a30d] bg-[#84cc16]/10 px-2 py-0.5 rounded">
-                          {selectedSent.couponCode}
-                        </span>
-                      </div>
-                    )}
                     <div className="border-t border-gray-100 pt-3">
                       <p className="text-xs font-semibold text-gray-500 mb-3">Preview</p>
                       <BrandedEmailShell>
@@ -718,14 +578,6 @@ export default function EmailsPage() {
                           Hi {selectedSent.toName || "there"},
                         </p>
                         <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedSent.body}</p>
-                        {selectedSent.couponCode && (() => {
-                          return (
-                            <div className="bg-[#f3ffe0] border-2 border-black rounded-lg p-4">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Your Exclusive Discount</p>
-                              <p className="text-2xl font-black tracking-widest text-[#5a9900] mb-1">{selectedSent.couponCode}</p>
-                            </div>
-                          );
-                        })()}
                       </BrandedEmailShell>
                     </div>
                   </div>
@@ -745,12 +597,6 @@ export default function EmailsPage() {
                         <p className="text-sm font-semibold text-gray-900 truncate">
                           {email.toName || email.to}
                         </p>
-                        {email.couponCode && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-[#65a30d] bg-[#84cc16]/10 px-1.5 py-0.5 rounded shrink-0">
-                            <Tag className="w-2.5 h-2.5" />
-                            Coupon
-                          </span>
-                        )}
                       </div>
                       <p className="text-xs text-gray-500 truncate">{email.subject}</p>
                     </div>

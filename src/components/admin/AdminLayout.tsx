@@ -16,7 +16,6 @@ import {
   Bell,
   Activity,
   ClipboardList,
-  Tag,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -38,7 +37,6 @@ const navItems = [
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/activity", label: "Activity Log", icon: Activity },
-  { href: "/admin/coupons", label: "Coupons", icon: Tag },
   { href: "/admin/emails", label: "Emails", icon: Mail },
 ];
 

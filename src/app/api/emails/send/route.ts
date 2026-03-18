@@ -8,7 +8,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { to, toName, subject, body, couponCode } = await req.json();
+    const { to, toName, subject, body } = await req.json();
 
     if (!to || !subject || !body) {
       return NextResponse.json(
@@ -17,20 +17,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Look up coupon details for the branded block
-    let couponData: { code: string; discountPercent: number; expiresAt: string } | undefined;
-    if (couponCode) {
-      const coupon = db.coupons.find((c) => c.code === couponCode);
-      if (coupon) {
-        couponData = {
-          code: coupon.code,
-          discountPercent: coupon.discountPercent,
-          expiresAt: coupon.expiresAt,
-        };
-      }
-    }
-
-    const htmlBody = buildBrandedEmail(toName || to, body, couponData);
+    const htmlBody = buildBrandedEmail(toName || to, body);
 
     const apiKey = process.env.ZEPTOMAIL_API_KEY;
 
@@ -83,7 +70,6 @@ export async function POST(req: NextRequest) {
       toName: toName || "",
       subject,
       body,
-      ...(couponCode ? { couponCode } : {}),
       sentAt: `${today()} ${nowTime()}`,
     };
 

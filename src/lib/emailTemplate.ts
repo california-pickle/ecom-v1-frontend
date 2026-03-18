@@ -4,7 +4,6 @@ const LOGO_URL =
 export function buildBrandedEmail(
   recipientName: string,
   bodyText: string,
-  coupon?: { code: string; discountPercent: number; expiresAt: string },
 ): string {
   const year = new Date().getFullYear();
   const name = recipientName?.trim() || "there";
@@ -13,31 +12,6 @@ export function buildBrandedEmail(
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/\n/g, "<br/>");
-
-  let couponBlock = "";
-  if (coupon) {
-    const expiry = new Date(coupon.expiresAt).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-    couponBlock = `
-<table cellpadding="0" cellspacing="0" role="presentation" style="width:100%;margin-top:32px;">
-<tr>
-<td style="background-color:#f3ffe0;border:2px solid #000000;border-radius:6px;padding:22px 24px;">
-  <p style="margin:0 0 6px;font-size:10px;font-weight:900;font-family:'Arial Black',Impact,sans-serif;text-transform:uppercase;letter-spacing:1.8px;color:#6b7280;">
-    Your Exclusive Discount
-  </p>
-  <p style="margin:0 0 10px;font-size:30px;font-weight:900;font-family:'Arial Black',Impact,sans-serif;letter-spacing:4px;color:#5a9900;">
-    ${coupon.code}
-  </p>
-  <p style="margin:0;font-size:14px;line-height:1.5;color:#4b5563;">
-    <strong>${coupon.discountPercent}% off</strong> your next order &mdash; valid until <strong>${expiry}</strong>.
-  </p>
-</td>
-</tr>
-</table>`;
-  }
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -82,8 +56,6 @@ export function buildBrandedEmail(
   <div style="font-size:15px;line-height:1.75;color:#4b5563;">
     ${bodyHtml}
   </div>
-
-  ${couponBlock}
 
 </td>
 </tr>

@@ -11,7 +11,6 @@ import {
   ChevronRight,
   RefreshCw,
   CheckCircle,
-  X,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -49,15 +48,6 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [formErrors, setFormErrors] = useState<Record<string, boolean>>({});
-
-  const [couponOpen, setCouponOpen] = useState(false);
-  const [couponCode, setCouponCode] = useState("");
-  const [couponLoading, setCouponLoading] = useState(false);
-  const [appliedCoupon, setAppliedCoupon] = useState<null | {
-    code: string;
-    discountPercent: number;
-  }>(null);
-  const [couponError, setCouponError] = useState("");
 
   const handleFormChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -180,43 +170,6 @@ export default function CheckoutPage() {
     }
   };
 
-  const applyCoupon = async () => {
-    const code = couponCode.trim();
-    if (!code) return;
-    setCouponLoading(true);
-    setCouponError("");
-    try {
-      const res = await fetch("/api/coupons/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
-      });
-      const data = await res.json();
-      if (data.valid) {
-        setAppliedCoupon({
-          code: data.code,
-          discountPercent: data.discountPercent,
-        });
-        setCouponError("");
-        toast.success(`Coupon applied — ${data.discountPercent}% off!`);
-      } else {
-        setCouponError(data.message || "Invalid coupon code");
-        setAppliedCoupon(null);
-      }
-    } catch {
-      setCouponError("Failed to validate coupon. Try again.");
-      setAppliedCoupon(null);
-    } finally {
-      setCouponLoading(false);
-    }
-  };
-
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCode("");
-    setCouponError("");
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) {
@@ -251,7 +204,6 @@ export default function CheckoutPage() {
           })),
           shippoRateId: selectedRate.rateId,
           shippingCost: selectedRate.amount,
-          couponCode: appliedCoupon?.code ?? undefined,
         }),
       });
 
@@ -270,10 +222,6 @@ export default function CheckoutPage() {
       }
 
       if (data.checkoutUrl) {
-        // Store coupon for redemption after Stripe payment succeeds
-        if (appliedCoupon) {
-          sessionStorage.setItem("pendingCoupon", appliedCoupon.code);
-        }
         window.location.href = data.checkoutUrl;
       } else {
         toast.error("No checkout URL received. Please try again.");
@@ -285,10 +233,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const discount = appliedCoupon
-    ? (total * appliedCoupon.discountPercent) / 100
-    : 0;
-  const grandTotal = total - discount + (selectedRate?.amount ?? 0);
+  const grandTotal = total + (selectedRate?.amount ?? 0);
 
   return (
     <>
@@ -658,82 +603,12 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  {/* Coupon Section */}
-                  {items.length > 0 && (
-                    <div className="mt-4">
-                      {!couponOpen && !appliedCoupon ? (
-                        <button
-                          type="button"
-                          onClick={() => setCouponOpen(true)}
-                          className="text-[10px] font-black uppercase tracking-widest text-black/40 hover:text-black transition cursor-pointer flex items-center gap-1"
-                        >
-                          <Plus size={10} strokeWidth={3} /> Apply Coupon Code
-                        </button>
-                      ) : (
-                        <div className="space-y-2">
-                          {!appliedCoupon && (
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={couponCode}
-                                onChange={(e) => {
-                                  setCouponCode(e.target.value.toUpperCase());
-                                  setCouponError("");
-                                }}
-                                placeholder="ENTER CODE"
-                                className="flex-1 border-2 border-black rounded-sm px-3 py-2 text-xs font-black uppercase tracking-wider focus:outline-none focus:bg-[#a3e635]/20 transition"
-                              />
-                              <button
-                                type="button"
-                                onClick={applyCoupon}
-                                disabled={couponLoading || !couponCode.trim()}
-                                className="border-2 border-black px-3 py-2 text-xs font-black uppercase bg-white hover:bg-[#a3e635] transition disabled:opacity-40 disabled:cursor-not-allowed"
-                              >
-                                {couponLoading ? "..." : "Apply"}
-                              </button>
-                            </div>
-                          )}
-                          {couponError && (
-                            <p className="text-[10px] font-black uppercase tracking-widest text-red-600">
-                              {couponError}
-                            </p>
-                          )}
-                          {appliedCoupon && (
-                            <div className="flex items-center justify-between bg-[#a3e635]/20 border-2 border-[#a3e635] rounded-sm px-3 py-2">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-black">
-                                {appliedCoupon.code} applied —{" "}
-                                {appliedCoupon.discountPercent}% off
-                              </span>
-                              <button
-                                type="button"
-                                onClick={removeCoupon}
-                                className="text-black/60 hover:text-black transition"
-                              >
-                                <X size={12} strokeWidth={3} />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   {items.length > 0 && (
                     <div className="border-t-2 border-black mt-6 pt-6 space-y-3">
                       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                         <span className="text-black/40">Subtotal</span>
                         <span className="text-black">${total.toFixed(2)}</span>
                       </div>
-                      {appliedCoupon && (
-                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                          <span className="text-[#65a30d]">
-                            Discount ({appliedCoupon.discountPercent}%)
-                          </span>
-                          <span className="text-[#65a30d]">
-                            -${discount.toFixed(2)}
-                          </span>
-                        </div>
-                      )}
                       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                         <span className="text-black/40">Shipping</span>
                         {selectedRate ? (

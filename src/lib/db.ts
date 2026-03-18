@@ -43,25 +43,12 @@ export interface EmailTemplate {
   locked: boolean; // true = pre-designed, admin can only edit fields
 }
 
-export interface Coupon {
-  id: string;
-  code: string;
-  discountPercent: number;
-  maxUses: number;
-  usedCount: number;
-  expiresAt: string;
-  active: boolean;
-  createdAt: string;
-  note: string; // who it was created for
-}
-
 export interface SentEmail {
   id: string;
   to: string;
   toName: string;
   subject: string;
   body: string;
-  couponCode?: string;
   sentAt: string;
 }
 
@@ -134,10 +121,6 @@ const seedEmailTemplates: EmailTemplate[] = [
   },
 ];
 
-// ─── Seed coupons ─────────────────────────────────────────────────────────────
-
-const seedCoupons: Coupon[] = [];
-
 // ─── Seed sent emails ─────────────────────────────────────────────────────────
 
 const seedSentEmails: SentEmail[] = [];
@@ -169,12 +152,10 @@ declare global {
         notifications: Notification[];
         logs: ActivityLog[];
         emailTemplates: EmailTemplate[];
-        coupons: Coupon[];
         sentEmails: SentEmail[];
         bulkCounter: number;
         notifCounter: number;
         logCounter: number;
-        couponCounter: number;
         sentEmailCounter: number;
       }
     | undefined;
@@ -187,12 +168,10 @@ if (!global.__db) {
     notifications:  saved?.notifications  ?? [...seedNotifications],
     logs:           saved?.logs           ?? [...seedLogs],
     emailTemplates: saved?.emailTemplates ?? [...seedEmailTemplates],
-    coupons:        saved?.coupons        ?? [...seedCoupons],
     sentEmails:     saved?.sentEmails     ?? [...seedSentEmails],
     bulkCounter:        saved?.bulkCounter        ?? 0,
     notifCounter:       saved?.notifCounter       ?? 1,
     logCounter:         saved?.logCounter         ?? 2,
-    couponCounter:      saved?.couponCounter      ?? 0,
     sentEmailCounter:   saved?.sentEmailCounter   ?? 0,
   };
 }
@@ -244,22 +223,9 @@ export function addLog(action: string, detail: string): void {
   });
 }
 
-/** Generate coupon ID */
-export function generateCouponId(): string {
-  db.couponCounter += 1;
-  return `CPN-${String(db.couponCounter).padStart(3, "0")}`;
-}
-
 /** Generate sent email ID */
 export function generateSentEmailId(): string {
   db.sentEmailCounter += 1;
   return `SENT-${String(db.sentEmailCounter).padStart(3, "0")}`;
 }
 
-/** Generate a random coupon code */
-export function generateCouponCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "PICKLE-";
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}

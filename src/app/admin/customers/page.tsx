@@ -106,17 +106,12 @@ export default function CustomersPage() {
   const [selected, setSelected] = useState<DerivedCustomer | null>(null);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailForm, setEmailForm] = useState({ subject: "", body: "" });
-  const [couponEnabled, setCouponEnabled] = useState(false);
-  const [discountPercent, setDiscountPercent] = useState(10);
-  const [couponExpiryDays, setCouponExpiryDays] = useState(7);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailTemplates, setEmailTemplates] = useState<{ id: string; name: string; type: string; subject: string; fields: Record<string, string>; body: string }[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
 
   const openEmailModal = () => {
     setEmailForm({ subject: "", body: "" });
-    setCouponEnabled(false);
-    setDiscountPercent(10);
     setSelectedTemplateId("");
     setEmailModalOpen(true);
     // Fetch templates
@@ -147,25 +142,6 @@ export default function CustomersPage() {
     if (!selected || !emailForm.subject.trim() || !emailForm.body.trim()) return;
     setSendingEmail(true);
     try {
-      let couponCode: string | undefined;
-      if (couponEnabled) {
-        const couponRes = await fetch("/api/coupons", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            discountPercent,
-            expiresAt: new Date(Date.now() + couponExpiryDays * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-            note: `Created for ${selected.name}`,
-          }),
-        });
-        const couponData = await couponRes.json();
-        couponCode = couponData.code;
-      }
-      let finalBody = emailForm.body;
-      if (couponCode) {
-        const expiryDate = new Date(Date.now() + couponExpiryDays * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-        finalBody += `\n\nHere's a ${discountPercent}% discount just for you! Use code: ${couponCode}\nValid until ${expiryDate}.`;
-      }
       await fetch("/api/emails/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -173,8 +149,7 @@ export default function CustomersPage() {
           to: selected.email,
           toName: selected.name,
           subject: emailForm.subject,
-          body: finalBody,
-          ...(couponCode && { couponCode }),
+          body: emailForm.body,
         }),
       });
       toast.success(`Email sent to ${selected.name}`);
@@ -485,42 +460,6 @@ export default function CustomersPage() {
                 placeholder="Write your message..."
                 className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent resize-none"
               />
-            </div>
-
-            {/* Coupon Toggle */}
-            <div className="bg-gray-50 rounded-lg p-3 space-y-2.5">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={couponEnabled}
-                  onChange={(e) => setCouponEnabled(e.target.checked)}
-                  className="accent-[#84cc16] w-3.5 h-3.5"
-                />
-                <span className="text-xs font-semibold text-gray-700">Attach coupon code</span>
-              </label>
-              {couponEnabled && (
-                <div className="flex items-center gap-3 pl-5.5">
-                  <label className="text-xs text-gray-500">Discount %</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={discountPercent}
-                    onChange={(e) => setDiscountPercent(Math.min(50, Math.max(1, Number(e.target.value))))}
-                    className="w-16 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
-                  />
-                  <label className="text-xs text-gray-500">Expires</label>
-                  <select
-                    value={couponExpiryDays}
-                    onChange={(e) => setCouponExpiryDays(Number(e.target.value))}
-                    className="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16]"
-                  >
-                    {[3, 4, 5, 6, 7].map((d) => (
-                      <option key={d} value={d}>{d}d</option>
-                    ))}
-                  </select>
-                </div>
-              )}
             </div>
 
             {/* Actions */}
