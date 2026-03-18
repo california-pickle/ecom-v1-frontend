@@ -57,13 +57,11 @@ export function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onC
       {/* Logo */}
       <div className="px-5 py-5 border-b border-gray-100">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-[#84cc16] rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-black font-black text-sm">P</span>
-          </div>
+          <img src="/logo.webp" alt="The California Pickle" width={36} height={36} className="flex-shrink-0" />
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="text-sm font-black text-gray-900 tracking-tight">PICKLE</span>
-              <span className="text-sm font-black text-[#84cc16] tracking-tight">ADMIN</span>
+              <span className="text-sm font-black text-gray-900 tracking-tight">The California</span>
+              <span className="text-sm font-black text-[#84cc16] tracking-tight">PICKLE</span>
             </div>
             <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">Control Panel</p>
           </div>

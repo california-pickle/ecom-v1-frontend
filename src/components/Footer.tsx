@@ -79,13 +79,15 @@ export default function Footer() {
             >
               <InstagramIcon />
             </a>
-            <Link
-              href="#"
+            <a
+              href="https://www.tiktok.com/@thecaliforniapick5?_r=1&_t=ZP-94k4ch2cZdH"
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label="TikTok"
               className="text-white/30 hover:text-[#a3e635] transition-colors"
             >
               <TikTokIcon />
-            </Link>
+            </a>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between w-full pt-12 border-t border-white/5 gap-3 sm:gap-8">
