@@ -12,8 +12,9 @@ export async function POST(req: NextRequest) {
     });
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error("Shipping rates proxy error:", error);
-    return NextResponse.json({ message: "Failed to get shipping rates" }, { status: 500 });
+  } catch (error: any) {
+    const msg = error?.message ?? "Unknown error";
+    console.error("Shipping rates proxy error:", msg);
+    return NextResponse.json({ message: "Failed to reach shipping service", detail: msg }, { status: 502 });
   }
 }

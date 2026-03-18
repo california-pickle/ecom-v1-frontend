@@ -47,7 +47,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data, { status: 201 });
   } catch (error: any) {
-    console.error("Order proxy error:", error);
-    return NextResponse.json({ error: "Failed to process order" }, { status: 500 });
+    const msg = error?.message ?? "Unknown error";
+    console.error("Order proxy error:", msg);
+    return NextResponse.json(
+      { error: "Failed to reach order service", detail: msg },
+      { status: 502 },
+    );
   }
 }
