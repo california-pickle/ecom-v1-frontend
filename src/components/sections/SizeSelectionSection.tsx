@@ -5,50 +5,6 @@ import Link from "next/link";
 import { useCart } from "../CartContext";
 import type { BackendProduct } from "@/app/page";
 
-const STATIC_PRODUCT_ID = "69aab28f68caaa864f09c826";
-
-const STATIC_SIZES = [
-  {
-    id: "60ml-12pack",
-    variantId: "69aab28f68caaa864f09c827",
-    name: "60ml Pack",
-    sizeLabel: "60ml — Pack of 12",
-    quantity: "12 Bottles",
-    description: "Perfect for on-the-go performance.",
-    price: 22,
-    perUnit: "$1.83 / bottle",
-    image: "/bottle.webp",
-    popular: false,
-    stock: "In Stock",
-  },
-  {
-    id: "halfgallon",
-    variantId: "69aab28f68caaa864f09c828",
-    name: "Half Gallon",
-    sizeLabel: "Half Gallon",
-    quantity: "64 fl oz",
-    description: "Ideal for daily hydration & recovery.",
-    price: 28,
-    perUnit: "$0.44 / fl oz",
-    image: "/bottle.webp",
-    popular: true,
-    stock: "In Stock",
-  },
-  {
-    id: "1gallon",
-    variantId: "69aab28f68caaa864f09c829",
-    name: "1 Gallon",
-    sizeLabel: "1 Gallon",
-    quantity: "128 fl oz",
-    description: "The bulk choice for serious athletes.",
-    price: 38,
-    perUnit: "$0.30 / fl oz",
-    image: "/bottle.webp",
-    popular: false,
-    stock: "In Stock",
-  },
-];
-
 interface SizeCard {
   id: string;
   variantId: string;
@@ -90,11 +46,9 @@ function buildSizesFromBackend(product: BackendProduct): SizeCard[] {
 export default function SizeSelectionSection({ product }: Props) {
   const { addItem } = useCart();
 
-  const productId = product?._id ?? STATIC_PRODUCT_ID;
-  const sizes: SizeCard[] =
-    product && product.variants?.length > 0
-      ? buildSizesFromBackend(product)
-      : STATIC_SIZES;
+  const hasLiveData = product && product.variants?.length > 0;
+  const productId = product?._id;
+  const sizes: SizeCard[] = hasLiveData ? buildSizesFromBackend(product!) : [];
 
   return (
     <section id="sizes" className="bg-white py-16 sm:py-24 lg:py-32">
@@ -113,125 +67,142 @@ export default function SizeSelectionSection({ product }: Props) {
           </p>
         </div>
 
-        {/* Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 md:gap-8 items-start">
-          {sizes.map((size) => (
-            <div
-              key={size.id}
-              className={`relative flex flex-col rounded-sm transition-all duration-300 hover:-translate-y-1 ${
-                size.popular
-                  ? "bg-[#a3e635] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] sm:scale-105 z-10"
-                  : "bg-white border-4 border-black/20 hover:border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.06)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
-              }`}
+        {/* Fallback when backend data is unavailable */}
+        {!hasLiveData && (
+          <div className="text-center py-16">
+            <p className="text-black/40 font-black text-[11px] uppercase tracking-widest mb-6">
+              Products temporarily unavailable
+            </p>
+            <Link
+              href="/product/california-pickle"
+              className="inline-block btn-primary px-10 py-4"
             >
-              {/* Popular badge */}
-              {size.popular && (
-                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black text-[#a3e635] text-[10px] font-black px-6 py-2 uppercase tracking-widest shadow-lg whitespace-nowrap">
-                  Most Popular
-                </div>
-              )}
+              View Product
+            </Link>
+          </div>
+        )}
 
-              {/* Image */}
-              <div className="relative w-full flex items-center justify-center pt-8 px-4 pb-2">
-                <Image
-                  src={size.image}
-                  alt={size.name}
-                  width={220}
-                  height={220}
-                  className="w-full max-w-[210px] h-auto object-contain"
-                />
-              </div>
-
-              {/* Divider */}
-              <div className={`mx-5 h-[2px] ${size.popular ? "bg-black/15" : "bg-black/6"}`} />
-
-              {/* Content */}
-              <div className="p-5 flex flex-col flex-1">
-
-                {/* Stock */}
-                <div className="flex items-center gap-2 mb-2.5">
-                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                    size.stock === "In Stock" ? "bg-emerald-500" :
-                    size.stock === "Low Stock" ? "bg-amber-500" : "bg-red-400"
-                  }`} />
-                  <span className={`text-[9px] font-black uppercase tracking-widest ${size.popular ? "text-black/60" : "text-black/40"}`}>
-                    {size.stock}
-                  </span>
-                </div>
-
-                {/* Name */}
-                <h3 className="text-xl font-black text-black uppercase tracking-tighter italic mb-0.5">
-                  {size.name}
-                </h3>
-                <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${size.popular ? "text-black/50" : "text-black/30"}`}>
-                  {size.sizeLabel}
-                </p>
-                {size.description && size.description !== size.quantity && (
-                  <p className={`text-[11px] font-bold uppercase tracking-tight mb-3 ${size.popular ? "text-black/60" : "text-black/40"}`}>
-                    {size.description}
-                  </p>
+        {/* Cards — only rendered when we have live IDs from backend */}
+        {hasLiveData && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 md:gap-8 items-start">
+            {sizes.map((size) => (
+              <div
+                key={size.id}
+                className={`relative flex flex-col rounded-sm transition-all duration-300 hover:-translate-y-1 ${
+                  size.popular
+                    ? "bg-[#a3e635] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] sm:scale-105 z-10"
+                    : "bg-white border-4 border-black/20 hover:border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.06)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+                }`}
+              >
+                {/* Popular badge */}
+                {size.popular && (
+                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black text-[#a3e635] text-[10px] font-black px-6 py-2 uppercase tracking-widest shadow-lg whitespace-nowrap">
+                    Most Popular
+                  </div>
                 )}
 
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {["0g Sugar", "Real Brine", "Electrolytes", "Vegan"].map((tag) => (
-                    <span
-                      key={tag}
-                      className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 border-2 rounded-sm ${
-                        size.popular
-                          ? "border-black/30 text-black/60"
-                          : "border-black/15 text-black/40"
-                      }`}
-                    >
-                      {tag}
-                    </span>
-                  ))}
+                {/* Image */}
+                <div className="relative w-full flex items-center justify-center pt-8 px-4 pb-2">
+                  <Image
+                    src={size.image}
+                    alt={size.name}
+                    width={220}
+                    height={220}
+                    className="w-full max-w-[210px] h-auto object-contain"
+                  />
                 </div>
 
                 {/* Divider */}
-                <div className={`h-[2px] mb-3 ${size.popular ? "bg-black/15" : "bg-black/6"}`} />
+                <div className={`mx-5 h-[2px] ${size.popular ? "bg-black/15" : "bg-black/6"}`} />
 
-                {/* Price */}
-                <div className="flex items-baseline justify-between mb-4">
-                  <span className="text-4xl font-black text-black tracking-tighter">
-                    ${size.price}
-                  </span>
-                  {size.perUnit && (
-                    <span className={`text-[9px] font-black uppercase tracking-widest ${size.popular ? "text-black/40" : "text-black/25"}`}>
-                      {size.perUnit}
+                {/* Content */}
+                <div className="p-5 flex flex-col flex-1">
+
+                  {/* Stock */}
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                      size.stock === "In Stock" ? "bg-emerald-500" :
+                      size.stock === "Low Stock" ? "bg-amber-500" : "bg-red-400"
+                    }`} />
+                    <span className={`text-[9px] font-black uppercase tracking-widest ${size.popular ? "text-black/60" : "text-black/40"}`}>
+                      {size.stock}
                     </span>
-                  )}
-                </div>
+                  </div>
 
-                {/* Buttons */}
-                <div className="flex flex-col gap-3 mt-auto">
-                  <button
-                    onClick={() =>
-                      addItem({
-                        id: size.id,
-                        productId,
-                        variantId: size.variantId,
-                        name: `${size.name}${size.quantity ? ` (${size.quantity})` : ""}`,
-                        price: size.price,
-                        image: size.image,
-                        sizeLabel: size.sizeLabel,
-                      })
-                    }
-                    className={size.popular ? "btn-secondary" : "btn-primary"}
-                  >
-                    Add to Cart
-                  </button>
-                  <Link
-                    href={`/product/${product?.slug ?? "california-pickle"}?variant=${size.variantId}`}
-                    className="btn-outline text-center py-3 text-xs"
-                  >
-                    View Details
-                  </Link>
+                  {/* Name */}
+                  <h3 className="text-xl font-black text-black uppercase tracking-tighter italic mb-0.5">
+                    {size.name}
+                  </h3>
+                  <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${size.popular ? "text-black/50" : "text-black/30"}`}>
+                    {size.sizeLabel}
+                  </p>
+                  {size.description && size.description !== size.quantity && (
+                    <p className={`text-[11px] font-bold uppercase tracking-tight mb-3 ${size.popular ? "text-black/60" : "text-black/40"}`}>
+                      {size.description}
+                    </p>
+                  )}
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {["0g Sugar", "Real Brine", "Electrolytes", "Vegan"].map((tag) => (
+                      <span
+                        key={tag}
+                        className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 border-2 rounded-sm ${
+                          size.popular
+                            ? "border-black/30 text-black/60"
+                            : "border-black/15 text-black/40"
+                        }`}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Divider */}
+                  <div className={`h-[2px] mb-3 ${size.popular ? "bg-black/15" : "bg-black/6"}`} />
+
+                  {/* Price */}
+                  <div className="flex items-baseline justify-between mb-4">
+                    <span className="text-4xl font-black text-black tracking-tighter">
+                      ${size.price}
+                    </span>
+                    {size.perUnit && (
+                      <span className={`text-[9px] font-black uppercase tracking-widest ${size.popular ? "text-black/40" : "text-black/25"}`}>
+                        {size.perUnit}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex flex-col gap-3 mt-auto">
+                    <button
+                      onClick={() =>
+                        addItem({
+                          id: size.id,
+                          productId: productId!,
+                          variantId: size.variantId,
+                          name: `${size.name}${size.quantity ? ` (${size.quantity})` : ""}`,
+                          price: size.price,
+                          image: size.image,
+                          sizeLabel: size.sizeLabel,
+                        })
+                      }
+                      className={size.popular ? "btn-secondary" : "btn-primary"}
+                    >
+                      Add to Cart
+                    </button>
+                    <Link
+                      href={`/product/${product?.slug ?? "california-pickle"}?variant=${size.variantId}`}
+                      className="btn-outline text-center py-3 text-xs"
+                    >
+                      View Details
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -183,19 +183,31 @@ export default async function ProductPage({
           </div>
 
           {/* Image gallery (left) + variant/cart actions (right) */}
-          <ProductBuySection
-            productId={product.id}
-            productName={product.name}
-            badge={product.badge}
-            variants={product.sizeOptions.map((opt) => ({
-              variantId: opt.variantId ?? opt.value,
-              value: opt.value,
-              label: opt.label,
-              price: opt.price,
-              sublabel: opt.sublabel,
-              images: opt.images ?? [],
-            }))}
-          />
+          {/* Only render buy section with live backend data — never with hardcoded fallback IDs */}
+          {backendProduct ? (
+            <ProductBuySection
+              productId={product.id}
+              productName={product.name}
+              badge={product.badge}
+              variants={product.sizeOptions.map((opt) => ({
+                variantId: opt.variantId ?? opt.value,
+                value: opt.value,
+                label: opt.label,
+                price: opt.price,
+                sublabel: opt.sublabel,
+                images: opt.images ?? [],
+              }))}
+            />
+          ) : (
+            <div className="py-12 text-center border-2 border-black/10 rounded-sm">
+              <p className="text-black/40 font-black text-[11px] uppercase tracking-widest mb-2">
+                Product details temporarily unavailable
+              </p>
+              <p className="text-black/30 font-bold text-xs uppercase tracking-widest">
+                Please try again in a moment
+              </p>
+            </div>
+          )}
 
           {/* Key features — below the buy grid */}
           {product.keyFeatures.length > 0 && (
