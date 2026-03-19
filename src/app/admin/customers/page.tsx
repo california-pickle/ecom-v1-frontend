@@ -3,107 +3,36 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, ChevronRight, X, User, Mail, MapPin, ShoppingBag, Calendar, RefreshCw, Tag } from "lucide-react";
 import axiosInstance from "@/lib/axiosInstance";
-import { cn } from "@/lib/utils";
+
 import { toast } from "sonner";
 
-interface BackendOrder {
+interface AggregatedCustomer {
   _id: string;
-  email: string;
-  shippingAddress: {
-    firstName: string;
-    lastName: string;
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-  };
-  items: { name: string; sizeLabel: string; quantity: number; priceAtPurchase: number }[];
-  totalAmount: number;
-  paymentStatus: "pending" | "paid" | "failed";
-  orderStatus: string;
-  createdAt: string;
-}
-
-interface DerivedCustomer {
   email: string;
   name: string;
   city: string;
   state: string;
   totalOrders: number;
-  paidOrders: number;
   totalSpent: number;
-  joinDate: string;
-  orders: BackendOrder[];
+  firstOrder: string;
+  lastOrder: string;
 }
 
-const orderStatusColors: Record<string, string> = {
-  pending_payment: "bg-gray-100 text-gray-600",
-  processing: "bg-yellow-100 text-yellow-700",
-  shipped: "bg-blue-100 text-blue-700",
-  delivered: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
-};
-
-const orderStatusLabel: Record<string, string> = {
-  pending_payment: "Pending Payment",
-  processing: "Processing",
-  shipped: "Shipped",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-};
-
-function deriveCustomers(orders: BackendOrder[]): DerivedCustomer[] {
-  const map = new Map<string, DerivedCustomer>();
-
-  for (const order of orders) {
-    const email = order.email.toLowerCase();
-    if (!map.has(email)) {
-      map.set(email, {
-        email,
-        name: `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`,
-        city: order.shippingAddress.city,
-        state: order.shippingAddress.state,
-        totalOrders: 0,
-        paidOrders: 0,
-        totalSpent: 0,
-        joinDate: order.createdAt,
-        orders: [],
-      });
-    }
-    const c = map.get(email)!;
-    c.totalOrders += 1;
-    if (order.paymentStatus === "paid") {
-      c.paidOrders += 1;
-      c.totalSpent = parseFloat((c.totalSpent + order.totalAmount).toFixed(2));
-    }
-    // Update to most recent name/address
-    const orderDate = new Date(order.createdAt);
-    if (orderDate > new Date(c.joinDate)) {
-      // Keep the latest name/address
-      c.name = `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`;
-      c.city = order.shippingAddress.city;
-      c.state = order.shippingAddress.state;
-    } else {
-      // joinDate is the earliest
-      c.joinDate = order.createdAt;
-    }
-    c.orders.push(order);
-  }
-
-  // Sort each customer's orders by date desc
-  for (const c of map.values()) {
-    c.orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }
-
-  return [...map.values()].sort((a, b) => b.totalSpent - a.totalSpent);
-}
+const MONTH_OPTIONS = [
+  { value: 0, label: "All Time" },
+  { value: 1, label: "Last Month" },
+  { value: 3, label: "Last 3 Months" },
+  { value: 6, label: "Last 6 Months" },
+  { value: 12, label: "Last Year" },
+];
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<DerivedCustomer[]>([]);
+  const [customers, setCustomers] = useState<AggregatedCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<DerivedCustomer | null>(null);
+  const [months, setMonths] = useState(0);
+  const [selected, setSelected] = useState<AggregatedCustomer | null>(null);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailForm, setEmailForm] = useState({ subject: "", body: "" });
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -191,16 +120,16 @@ export default function CustomersPage() {
 
   const fetchData = useCallback(async () => {
     setError(false);
+    setLoading(true);
     try {
-      const res = await axiosInstance.get("/order/all?page=1&limit=500");
-      const orders: BackendOrder[] = res.data.data ?? [];
-      setCustomers(deriveCustomers(orders));
+      const res = await axiosInstance.get(`/order/customers${months ? `?months=${months}` : ""}`);
+      setCustomers(res.data ?? []);
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [months]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -225,16 +154,27 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search by name, email, or city..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
-        />
+      {/* Search + Filter */}
+      <div className="flex items-center gap-3">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name, email, or city..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
+          />
+        </div>
+        <select
+          value={months}
+          onChange={(e) => setMonths(Number(e.target.value))}
+          className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
+        >
+          {MONTH_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}
@@ -358,7 +298,7 @@ export default function CustomersPage() {
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3.5 text-center">
                   <p className="text-xl font-black text-gray-800">
-                    ${selected.paidOrders > 0 ? (selected.totalSpent / selected.paidOrders).toFixed(0) : "0"}
+                    ${selected.totalOrders > 0 ? (selected.totalSpent / selected.totalOrders).toFixed(0) : "0"}
                   </p>
                   <p className="text-[11px] text-gray-400 font-medium mt-0.5">Avg. Order</p>
                 </div>
@@ -383,41 +323,41 @@ export default function CustomersPage() {
                   <div className="flex items-center gap-2.5 text-sm">
                     <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                     <span className="text-gray-500 text-xs">
-                      First order: {new Date(selected.joinDate).toLocaleDateString()}
+                      First order: {new Date(selected.firstOrder).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-sm">
+                    <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                    <span className="text-gray-500 text-xs">
+                      Last order: {new Date(selected.lastOrder).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
               </section>
 
-              {/* Order History */}
+              {/* Order Summary */}
               <section>
                 <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
-                  <ShoppingBag className="w-3 h-3" /> Order History
+                  <ShoppingBag className="w-3 h-3" /> Order Summary
                 </h4>
-                <div className="space-y-2">
-                  {selected.orders.map((order) => (
-                    <div
-                      key={order._id}
-                      className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3"
-                    >
-                      <div>
-                        <p className="text-xs font-mono text-gray-400">#{order._id.slice(-8).toUpperCase()}</p>
-                        <p className="text-sm font-semibold text-gray-800 mt-0.5">
-                          {order.items.map((i) => i.sizeLabel).join(", ")}
-                        </p>
-                        <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-gray-800">${order.totalAmount.toFixed(2)}</p>
-                        <span className={cn(
-                          "inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] font-semibold",
-                          orderStatusColors[order.orderStatus] ?? "bg-gray-100 text-gray-600"
-                        )}>
-                          {orderStatusLabel[order.orderStatus] ?? order.orderStatus}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="bg-gray-50 rounded-xl px-4 py-3 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Total Orders</span>
+                    <span className="font-bold text-gray-800">{selected.totalOrders}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Total Spent</span>
+                    <span className="font-bold text-gray-800">${selected.totalSpent.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Avg. Order Value</span>
+                    <span className="font-bold text-gray-800">
+                      ${selected.totalOrders > 0 ? (selected.totalSpent / selected.totalOrders).toFixed(2) : "0.00"}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-400 pt-1">
+                    View full order history in the Orders page by searching this email.
+                  </p>
                 </div>
               </section>
             </div>
