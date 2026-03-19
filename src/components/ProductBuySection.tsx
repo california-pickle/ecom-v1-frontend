@@ -39,9 +39,15 @@ function ProductBuySectionInner({ productId, productName, badge, variants }: Pro
   const activeImages = currentVariant.images;
   const total = currentVariant.price * quantity;
 
-  const handleVariantChange = (variantId: string) => {
-    setSelectedVariantId(variantId);
+  const handleVariantChange = (value: string) => {
+    setSelectedVariantId(value);
     setActiveImageIndex(0);
+    const variant = variants.find((v) => v.value === value);
+    if (variant) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("variant", variant.variantId);
+      router.replace(url.pathname + url.search, { scroll: false });
+    }
   };
 
   const handleAddToCart = () => {
