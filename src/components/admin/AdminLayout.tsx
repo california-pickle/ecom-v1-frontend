@@ -59,11 +59,12 @@ export function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onC
         <div className="flex items-center gap-2.5">
           <img src="/logo.webp" alt="The California Pickle" width={36} height={36} className="flex-shrink-0" />
           <div>
+            <p className="text-[10px] font-bold text-gray-400 tracking-wide uppercase leading-none">The</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-sm font-black text-gray-900 tracking-tight">The California</span>
+              <span className="text-sm font-black text-gray-900 tracking-tight">California</span>
               <span className="text-sm font-black text-[#84cc16] tracking-tight">PICKLE</span>
             </div>
-            <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">Control Panel</p>
+            <p className="text-[9px] text-gray-400 font-medium tracking-wide uppercase">Control Panel</p>
           </div>
         </div>
       </div>
