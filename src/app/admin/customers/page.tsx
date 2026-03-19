@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, ChevronRight, X, User, Mail, MapPin, ShoppingBag, Calendar, RefreshCw, Tag } from "lucide-react";
+import { Search, ChevronRight, ChevronLeft, X, User, Mail, MapPin, ShoppingBag, Calendar, RefreshCw, Tag } from "lucide-react";
 import axiosInstance from "@/lib/axiosInstance";
 
 import { toast } from "sonner";
@@ -18,21 +18,32 @@ interface AggregatedCustomer {
   lastOrder: string;
 }
 
-const MONTH_OPTIONS = [
-  { value: 0, label: "All Time" },
-  { value: 1, label: "Last Month" },
-  { value: 3, label: "Last 3 Months" },
-  { value: 6, label: "Last 6 Months" },
-  { value: 12, label: "Last Year" },
-];
+interface CustomerOrder {
+  _id: string;
+  items: { name: string; sizeLabel: string; quantity: number; priceAtPurchase: number }[];
+  totalAmount: number;
+  orderStatus: string;
+  createdAt: string;
+}
+
+const ORDER_STATUS_COLORS: Record<string, string> = {
+  processing: "bg-yellow-100 text-yellow-700",
+  shipped: "bg-blue-100 text-blue-700",
+  delivered: "bg-green-100 text-green-700",
+  cancelled: "bg-red-100 text-red-700",
+};
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<AggregatedCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [search, setSearch] = useState("");
-  const [months, setMonths] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCustomers, setTotalCustomers] = useState(0);
   const [selected, setSelected] = useState<AggregatedCustomer | null>(null);
+  const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailForm, setEmailForm] = useState({ subject: "", body: "" });
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -122,16 +133,36 @@ export default function CustomersPage() {
     setError(false);
     setLoading(true);
     try {
-      const res = await axiosInstance.get(`/order/customers${months ? `?months=${months}` : ""}`);
-      setCustomers(res.data ?? []);
+      const res = await axiosInstance.get(`/order/customers?page=${page}&limit=25`);
+      setCustomers(res.data.data ?? []);
+      setTotalPages(res.data.pagination?.totalPages ?? 1);
+      setTotalCustomers(res.data.pagination?.total ?? 0);
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, [months]);
+  }, [page]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const fetchCustomerOrders = async (email: string) => {
+    setLoadingOrders(true);
+    setCustomerOrders([]);
+    try {
+      const res = await axiosInstance.get(`/order/by-email?email=${encodeURIComponent(email)}`);
+      setCustomerOrders(res.data.data ?? []);
+    } catch {
+      toast.error("Failed to load order history");
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const handleSelectCustomer = (c: AggregatedCustomer) => {
+    setSelected(c);
+    fetchCustomerOrders(c.email);
+  };
 
   const totalLTV = customers.reduce((s, c) => s + c.totalSpent, 0);
 
@@ -146,7 +177,7 @@ export default function CustomersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Customers</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{customers.length} unique customers</p>
+          <p className="text-sm text-gray-500 mt-0.5">{totalCustomers} unique customers</p>
         </div>
         <div className="text-right">
           <p className="text-xl font-black text-gray-900">${totalLTV.toFixed(0)}</p>
@@ -154,27 +185,16 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Search + Filter */}
-      <div className="flex items-center gap-3">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or city..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
-          />
-        </div>
-        <select
-          value={months}
-          onChange={(e) => setMonths(Number(e.target.value))}
-          className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
-        >
-          {MONTH_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search by name, email, or city..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#84cc16] focus:border-transparent"
+        />
       </div>
 
       {/* Table */}
@@ -210,7 +230,7 @@ export default function CustomersPage() {
                 {filtered.map((c) => (
                   <tr
                     key={c.email}
-                    onClick={() => setSelected(c)}
+                    onClick={() => handleSelectCustomer(c)}
                     className="hover:bg-gray-50/60 transition cursor-pointer group"
                   >
                     <td className="px-5 py-3.5">
@@ -246,6 +266,30 @@ export default function CustomersPage() {
           <div className="text-center py-16 text-gray-400 text-sm">
             <User className="w-8 h-8 mx-auto mb-2 text-gray-300" />
             {search ? "No customers match your search." : "No customers yet. Orders will appear here."}
+          </div>
+        )}
+        {/* Pagination */}
+        {!loading && !error && totalPages > 1 && (
+          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+            <p className="text-xs text-gray-400">
+              Page {page} of {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" /> Prev
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -335,30 +379,41 @@ export default function CustomersPage() {
                 </div>
               </section>
 
-              {/* Order Summary */}
+              {/* Order History */}
               <section>
                 <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 mb-3">
-                  <ShoppingBag className="w-3 h-3" /> Order Summary
+                  <ShoppingBag className="w-3 h-3" /> Order History
                 </h4>
-                <div className="bg-gray-50 rounded-xl px-4 py-3 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">Total Orders</span>
-                    <span className="font-bold text-gray-800">{selected.totalOrders}</span>
+                {loadingOrders ? (
+                  <div className="flex items-center gap-2 text-xs text-gray-400 py-4 justify-center">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Loading orders...
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">Total Spent</span>
-                    <span className="font-bold text-gray-800">${selected.totalSpent.toFixed(2)}</span>
+                ) : customerOrders.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-4">No orders found.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {customerOrders.map((order) => (
+                      <div
+                        key={order._id}
+                        className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3"
+                      >
+                        <div>
+                          <p className="text-xs font-mono text-gray-400">#{order._id.slice(-8).toUpperCase()}</p>
+                          <p className="text-sm font-semibold text-gray-800 mt-0.5">
+                            {order.items.map((i) => `${i.sizeLabel} x${i.quantity}`).join(", ")}
+                          </p>
+                          <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-gray-800">${order.totalAmount.toFixed(2)}</p>
+                          <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${ORDER_STATUS_COLORS[order.orderStatus] ?? "bg-gray-100 text-gray-600"}`}>
+                            {order.orderStatus.replace("_", " ")}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">Avg. Order Value</span>
-                    <span className="font-bold text-gray-800">
-                      ${selected.totalOrders > 0 ? (selected.totalSpent / selected.totalOrders).toFixed(2) : "0.00"}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-gray-400 pt-1">
-                    View full order history in the Orders page by searching this email.
-                  </p>
-                </div>
+                )}
               </section>
             </div>
           </div>
